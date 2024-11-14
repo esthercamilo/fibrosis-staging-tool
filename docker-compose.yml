@@ -1,0 +1,61 @@
+# You are creating this instance in Virginia, Zone A (us-east-1a)
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --log-level debug --timeout 120 --workers 2 --threads 4
+    expose:
+      - "8000"
+    volumes:
+      - build-data:/app/dashboard/build
+      - media_volume:/app/media
+      - static_volume:/app/django-static
+    networks:
+      - webnet
+    depends_on:
+      - db
+
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - media_volume:/app/media
+      - static_volume:/app/django-static
+      - build-data:/usr/share/nginx/html
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+    networks:
+      - webnet
+
+  db:
+    image: postgres:latest
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - webnet
+
+volumes:
+  build-data:
+  media_volume:
+  static_volume:
+  db_data:
+
+networks:
+  webnet:
+    driver: bridge
