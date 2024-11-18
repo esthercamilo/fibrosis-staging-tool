@@ -1,0 +1,26 @@
+.form-container {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 40px;
+}
+
+.form-button {
+  margin-top: 10px;
+  background-color: #007bff;
+  color: white;
+}
+
+.form-button:disabled {
+  background-color: #ccc;
+}
+
+.form-result {
+  margin-top: 20px;
+}
+
+.alert-error {
+  color: red;
+  margin-top: 10px;
+}

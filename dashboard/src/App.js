@@ -1,55 +1,43 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
-import Register from "./components/Register";
-import AddQuestion from "./components/AddQuestion";
-import Roadmap from "./components/Roadmap";
-import Desempenho from "./components/Desempenho";
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import withTracker from "./withTracker";
 import "bootstrap/dist/css/bootstrap.min.css";
+import PredictionForm from "./components/Form";
 
-function Home() {
-  return <h2>Bem-vindo ao ViaIntensiva</h2>;
-}
+const routes = [
+  {
+    path: "/",
+    exact: true,
+    component: PredictionForm, // O componente de formulário será renderizado na rota inicial
+    layout: React.Fragment // Usando o layout padrão, ou ajuste conforme necessário
+  }
+  // Outras rotas podem ser adicionadas aqui, como suas rotas de "about", "contact", etc.
+  // {
+  //   path: '/outro',
+  //   exact: true,
+  //   component: OutroComponente,  // Ajuste para os outros componentes da sua aplicação
+  //   layout: LayoutOutro,  // Ajuste para o layout que você deseja para essa página
+  // },
+];
 
 function App() {
   return (
-    <Router>
-      <div className="App container mt-4">
-        <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <Link className="nav-link" to="/">
-                Home
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/roadmap">
-                Roadmap
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/desempenho">
-                Desempenho
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/register">
-                Registrar
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/add-question">
-                Adicionar Questão
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/roadmap" element={<Roadmap />} />
-          <Route path="/desempenho" element={<Desempenho />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/add-question" element={<AddQuestion />} />
-        </Routes>
+    <Router basename={process.env.REACT_APP_BASENAME || ""}>
+      <div>
+        {routes.map((route, index) => {
+          return (
+            <Route
+              key={index}
+              path={route.path}
+              exact={route.exact}
+              render={props => (
+                <route.layout {...props}>
+                  <route.component {...props} />
+                </route.layout>
+              )}
+            />
+          );
+        })}
       </div>
     </Router>
   );
