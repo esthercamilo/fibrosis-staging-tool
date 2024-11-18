@@ -21,7 +21,7 @@ function PredictionForm() {
     try {
       // Faz a requisição usando parâmetros na query string
       //const response = await axios.post("http://127.0.0.1:8000/api/predict/", {
-      const response = await axios.post("http://44.203.65.53/api/predict/", {
+      const response = await axios.post("http://44.203.65.53:8000/api/predict/", {
         params: {
           AGE: age,
           AST: ast,
