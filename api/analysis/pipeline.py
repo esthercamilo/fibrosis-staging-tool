@@ -1,19 +1,28 @@
-import datetime
 import os.path
-import joblib
-from imblearn.under_sampling import RandomUnderSampler
-import numpy as np
-from sklearn.metrics import confusion_matrix
+import os.path
 from itertools import combinations
-import seaborn as sns
+
+# from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, plot_tree
-from sklearn.metrics import accuracy_score, mean_squared_error
-from sklearn.preprocessing import LabelEncoder
+import seaborn as sns
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import auc
+from sklearn.metrics import (
+    classification_report,
+    roc_auc_score,
+    roc_curve,
+    precision_score,
+    recall_score,
+    accuracy_score,
+    f1_score
+)
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.tree import ExtraTreeClassifier, plot_tree
 
 
 class Analysis:
@@ -98,7 +107,7 @@ class Analysis:
 
         for combo in combinations_features:
 
-            if len(combo) < 2:
+            if len(combo) != 2:
                 continue
             undersampler = RandomUnderSampler(random_state=42)
             X = df[list(combo)]
@@ -165,65 +174,121 @@ class Analysis:
         df['FIB42'] = df['FIB4'] ** 2
         df['FIB4sqrt'] = np.sqrt(df['FIB4'])
 
-        return df
+        df['AST/ALT'] = df['AST'] / df['ALT']
+        df['AST/AGE'] = df['AST'] / df['AGE']
+        df['ALT/AGE'] = df['ALT'] / df['AGE']
+        df['PL/AGE'] = df['PL'] / df['AGE']
+
+        df['PL*ALT'] = df['PL'] * df['ALT']
+        df['PL*AGE'] = df['PL'] * df['AGE']
+        df['PL*AST'] = df['PL'] * df['AST']
+        df['ALT*AST'] = df['ALT'] * df['AST']
+        df['ALT*AGE'] = df['ALT'] * df['AGE']
+        df['AGE*AST'] = df['AGE'] * df['AST']
+
+        X = df.drop(['GROUP', 'iGROUP'], axis=1)
+        poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
+        X_poly = poly.fit_transform(X)
+        feature_names = poly.get_feature_names_out()
+        df_poly = pd.DataFrame(X_poly, columns=feature_names)
+
+        df = df.reset_index(drop=True)
+        df_poly = df_poly.reset_index(drop=True)
+
+        df_poly['GROUP'] = df['GROUP']
+        df_poly['iGROUP'] = df['iGROUP']
+        return df_poly
+
+    def feature_selection(self, df, name):
+
+        from sklearn.feature_selection import mutual_info_classif
+
+        X = df.drop(columns=['iGROUP', 'GROUP'])  # Removendo a variável alvo das variáveis independentes
+        y = df['iGROUP']  # A variável alvo
+
+        # Calcular a informação mútua entre cada atributo e o alvo
+        mi = mutual_info_classif(X, y)  # Agora, X não contém a variável alvo
+        mi_series = pd.Series(mi, index=X.columns).sort_values(ascending=False)
+
+        # Exibir a informação mútua para cada atributo
+        print("Informação Mútua:", mi_series)
+
+        # Seleção de atributos com base em um limiar de informação mútua
+        threshold = 0.1
+        selected_features = mi_series[mi_series > threshold].index
+        final_features = list(selected_features) + ['GROUP', 'iGROUP']
+        return df[final_features]
 
     def decision_tree(self, df, name):
-
         # Dividindo em variáveis independentes (X) e dependente (y)
         X = df.drop(['GROUP', 'DSE', 'iGROUP'], axis=1, errors='ignore')
         y = df['iGROUP']
 
+        # Balanceamento dos dados
         undersampler = RandomUnderSampler(random_state=42)
         X_resampled, y_resampled = undersampler.fit_resample(X, y)
+
         # Dividindo os dados em treino e teste
-        X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.3, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_resampled, y_resampled, test_size=0.2, random_state=42
+        )
 
-        # Criando e treinando o modelo
-        regressor = DecisionTreeRegressor(random_state=42)
-        regressor.fit(X_train, y_train)
+        model = ExtraTreeClassifier(random_state=42, max_depth=3)
 
-        # Fazendo previsões e avaliando o modelo
-        y_pred = regressor.predict(X_test)
-        print(f"Mean Squared Error {name}:", mean_squared_error(y_test, y_pred))
-
-        # Treinando o modelo (usando DecisionTreeClassifier para classificação)
-        model = DecisionTreeClassifier(random_state=42, max_depth=3)
         model.fit(X_train, y_train)
 
-        joblib.dump(model, os.path.join(self.root, 'api', 'analysis', 'results', f'model1_{name}.pkl'))
+        # Predições no conjunto de teste
+        y_pred = model.predict(X_test)
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
 
-        # Desenhando a árvore de decisão
-        plt.figure(figsize=(20, 15))  # Ajuste o tamanho da figura
-        plot_tree(model, filled=True, feature_names=X.columns, class_names=['G1', 'G2'], rounded=True, fontsize=12)
-        plt.savefig(os.path.join(self.root, 'api', 'analysis', 'plots', f'tree_{name}.png'))
+        # Métricas de avaliação
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+        roc_auc = roc_auc_score(y_test, y_pred_proba)
 
-        # Gerar a matriz de confusão
-        cm = confusion_matrix(y_test, y_pred)
+        report_path = os.path.join(self.root, 'api', 'analysis', 'results', f'tree_{name}.png')
+        with open(report_path, 'w') as f:
+            f.write(f"Precisão (Accuracy): {accuracy}\n")
+            f.write(f"Precisão (Precision): {precision}\n")
+            f.write(f"Sensibilidade (Recall):{recall}\n")
+            f.write(f"F1 Score: {f1}")
+            f.write(f"Área sob a curva ROC (AUC): {roc_auc}\n")
 
-        # Plotar a matriz de confusão usando Seaborn para visualização melhor
-        plt.figure(figsize=(6, 4))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=model.classes_, yticklabels=model.classes_)
-        plt.title('Matriz de Confusão')
-        plt.xlabel('Previsões')
-        plt.ylabel('Valores Reais')
-        plt.savefig(os.path.join(self.root, 'api', 'analysis', 'plots', f'confusion_matrix_{name}.png'))
+        # Curva ROC
+        fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
 
-        # Extraindo os valores da matriz de confusão
-        TP = cm[1, 1]  # Verdadeiro positivo (classe positiva)
-        FN = cm[1, 0]  # Falso negativo (classe positiva, mas predito negativo)
+        plt.figure(figsize=(10, 6))
+        plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC Curve (AUC = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Random Guess')
+        plt.xlabel('Taxa de Falsos Positivos (FPR)')
+        plt.ylabel('Taxa de Verdadeiros Positivos (TPR)')
+        plt.title('Curva ROC')
+        plt.legend(loc='lower right')
+        plt.grid()
+        roc_path = os.path.join(self.root, 'api', 'analysis', 'plots', f'roc_{name}.png')
+        plt.savefig(roc_path)
 
-        # Calculando as taxas
-        TPR = TP / (TP + FN)  # Taxa de verdadeiro positivo
-        FNR = FN / (TP + FN)  # Taxa de falso negativo
-
-        # Imprimir as taxas
-        print(f"Taxa de Verdadeiro Positivo (TPR)_{name}: {TPR:.2f}")
-        print(f"Taxa de Falso Negativo (FNR)_{name}: {FNR:.2f}\n\n")
+        # Plotando a árvore de decisão do melhor modelo
+        plt.figure(figsize=(12, 8))
+        plot_tree(
+            model,
+            filled=True,
+            feature_names=X.columns,
+            class_names=['Classe 0', 'Classe 1']  # Ajuste conforme suas classes
+        )
+        plt.title("Árvore de Decisão")
+        tree_path = os.path.join(self.root, 'api', 'analysis', 'plots', f'tree_{name}.png')
+        plt.savefig(tree_path)
+        print(f"Árvore de decisão salva em {tree_path}")
 
     def individual_model(self, df, name):
-        df = self.attributes(df)
+        df = df.drop('FIB4', axis=1, errors="ignore")
         df['iGROUP'] = self.le.fit_transform(df['GROUP'])
         df = self.lda(df, name)
+        df = self.attributes(df)
+        df = self.feature_selection(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
@@ -235,19 +300,29 @@ class Analysis:
         df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
-        # df_hbv1 = self.read('00_data_hbv_n177.csv')
-        # df_hbv2 = self.read('00_data_hbv_n568.csv')
-        # df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        df_hbv1 = self.read('00_data_hbv_n177.csv')
+        df_hbv2 = self.read('00_data_hbv_n568.csv')
+        df_hbv_read = pd.concat([df_hbv1, df_hbv2])
+        df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
-        # df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
-        # df_hcv2 = self.read('00_data_hcv_n230.csv')
-        # df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        # df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
+        df_hcv2 = self.read('00_data_hcv_n230.csv')
+        df_hcv_read = pd.concat([df_hcv1, df_hcv2])
+        df_hcv = self.individual_model(df_hcv_read, 'hcv')
+
+        # 4. model hbv + hcv
+        df_hbv_read['DSE'] = 2
+        df_hcv_read['DSE'] = 3
+        df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
+        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
-
+        df_fat_read['DSE'] = 1
+        df_hbv_read['DSE'] = 2
+        df_hcv_read['DSE'] = 3
+        df_global = pd.concat([df_fat_read, df_hbv_read, df_hcv_read])
+        df_global = self.individual_model(df_global, 'global')
 
 
 if __name__ == '__main__':
