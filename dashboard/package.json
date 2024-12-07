@@ -2,7 +2,7 @@
   "name": "shards-dashboard-lite-react",
   "version": "1.0.0",
   "private": true,
-  "homepage": "./",
+  "homepage": "./fibrosis-staging-tool",
   "dependencies": {
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",

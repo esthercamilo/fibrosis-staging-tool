@@ -9,6 +9,7 @@ import pandas as pd
 import seaborn as sns
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import auc
 from sklearn.metrics import (
     classification_report,
@@ -23,6 +24,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.tree import ExtraTreeClassifier, plot_tree
+from joblib import dump, load
 
 
 class Analysis:
@@ -100,14 +102,14 @@ class Analysis:
 
         # Todas as combinações possíveis
         exclude = ['GROUP', 'DSE', 'iGROUP']
-        features = [x for x in df.columns if x not in exclude]
+        features = [x for x in df.columns if x not in exclude][0:10]
         combinations_features = sum([list(combinations(features, i)) for i in range(1, len(features) + 1)], [])
 
         results = []
 
         for combo in combinations_features:
 
-            if len(combo) != 2:
+            if 1 < len(combo) < 6:
                 continue
             undersampler = RandomUnderSampler(random_state=42)
             X = df[list(combo)]
@@ -186,38 +188,18 @@ class Analysis:
         df['ALT*AGE'] = df['ALT'] * df['AGE']
         df['AGE*AST'] = df['AGE'] * df['AST']
 
-        X = df.drop(['GROUP', 'iGROUP'], axis=1)
-        poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
-        X_poly = poly.fit_transform(X)
-        feature_names = poly.get_feature_names_out()
-        df_poly = pd.DataFrame(X_poly, columns=feature_names)
+        df['PL-1'] = 1 / df['PL']
+        df['ALT^2'] = 1 / (df['ALT'] ** 2)
 
-        df = df.reset_index(drop=True)
-        df_poly = df_poly.reset_index(drop=True)
-
-        df_poly['GROUP'] = df['GROUP']
-        df_poly['iGROUP'] = df['iGROUP']
-        return df_poly
-
-    def feature_selection(self, df, name):
-
-        from sklearn.feature_selection import mutual_info_classif
-
-        X = df.drop(columns=['iGROUP', 'GROUP'])  # Removendo a variável alvo das variáveis independentes
-        y = df['iGROUP']  # A variável alvo
-
-        # Calcular a informação mútua entre cada atributo e o alvo
-        mi = mutual_info_classif(X, y)  # Agora, X não contém a variável alvo
-        mi_series = pd.Series(mi, index=X.columns).sort_values(ascending=False)
-
-        # Exibir a informação mútua para cada atributo
-        print("Informação Mútua:", mi_series)
-
-        # Seleção de atributos com base em um limiar de informação mútua
-        threshold = 0.1
-        selected_features = mi_series[mi_series > threshold].index
-        final_features = list(selected_features) + ['GROUP', 'iGROUP']
-        return df[final_features]
+        # X = df.drop(['GROUP', 'iGROUP'], axis=1, errors="ignore")
+        # poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
+        # X_poly = poly.fit_transform(X)
+        # feature_names = poly.get_feature_names_out()
+        # df_poly = pd.DataFrame(X_poly, columns=feature_names)
+        # df = df.reset_index(drop=True)
+        # df_poly = df_poly.reset_index(drop=True)
+        # df_poly['GROUP'] = df['GROUP']
+        return df
 
     def decision_tree(self, df, name):
         # Dividindo em variáveis independentes (X) e dependente (y)
@@ -230,16 +212,40 @@ class Analysis:
 
         # Dividindo os dados em treino e teste
         X_train, X_test, y_train, y_test = train_test_split(
-            X_resampled, y_resampled, test_size=0.2, random_state=42
+            X_resampled, y_resampled, test_size=0.3, random_state=42
         )
 
-        model = ExtraTreeClassifier(random_state=42, max_depth=3)
+        base_model = ExtraTreeClassifier(random_state=42)
 
-        model.fit(X_train, y_train)
+        param_grid = {
+            'max_depth': [2, 3, 4, None],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [2, 4],
+            'criterion': ['gini', 'entropy'],
+            'splitter': ['best', 'random'],
+            'max_features': [None, 'sqrt', 'log2'],
+            'class_weight': [None, 'balanced'],
+            'min_impurity_decrease': [0.0, 0.01, 0.1],
+            'ccp_alpha': [0.0, 0.01, 0.1]
+        }
 
-        # Predições no conjunto de teste
-        y_pred = model.predict(X_test)
-        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        grid_search = GridSearchCV(
+            estimator=base_model,
+            param_grid=param_grid,
+            scoring='f1',  # Altere a métrica conforme necessário
+            cv=5,  # Validação cruzada com 5 divisões
+            verbose=1,
+            n_jobs=-1  # Usa todos os núcleos disponíveis
+        )
+
+        grid_search.fit(X_train, y_train)
+
+        best_model = grid_search.best_estimator_
+        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1.pkl')
+        dump(best_model, modelpath)
+
+        y_pred = best_model.predict(X_test)
+        y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
         # Métricas de avaliação
         accuracy = accuracy_score(y_test, y_pred)
@@ -248,13 +254,13 @@ class Analysis:
         f1 = f1_score(y_test, y_pred)
         roc_auc = roc_auc_score(y_test, y_pred_proba)
 
-        report_path = os.path.join(self.root, 'api', 'analysis', 'results', f'tree_{name}.png')
+        report_path = os.path.join(self.root, 'api', 'analysis', 'results', f'tree_{name}.csv')
         with open(report_path, 'w') as f:
-            f.write(f"Precisão (Accuracy): {accuracy}\n")
-            f.write(f"Precisão (Precision): {precision}\n")
-            f.write(f"Sensibilidade (Recall):{recall}\n")
-            f.write(f"F1 Score: {f1}")
-            f.write(f"Área sob a curva ROC (AUC): {roc_auc}\n")
+            f.write(f"Accuracy: {accuracy}\n")
+            f.write(f"Precision: {precision}\n")
+            f.write(f"Recall:{recall}\n")
+            f.write(f"F1 Score: {f1}\n")
+            f.write(f"Area under the curve (AUC): {roc_auc}\n")
 
         # Curva ROC
         fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
@@ -262,33 +268,33 @@ class Analysis:
         plt.figure(figsize=(10, 6))
         plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC Curve (AUC = {roc_auc:.2f})')
         plt.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Random Guess')
-        plt.xlabel('Taxa de Falsos Positivos (FPR)')
-        plt.ylabel('Taxa de Verdadeiros Positivos (TPR)')
-        plt.title('Curva ROC')
+        plt.xlabel('False positive rate (FPR)')
+        plt.ylabel('True positive rate (TPR)')
+        plt.title('ROC Curve')
         plt.legend(loc='lower right')
         plt.grid()
-        roc_path = os.path.join(self.root, 'api', 'analysis', 'plots', f'roc_{name}.png')
+        roc_path = os.path.join(self.root, 'api', 'analysis', 'plots', f'tree_roc_{name}.png')
         plt.savefig(roc_path)
 
         # Plotando a árvore de decisão do melhor modelo
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(20, 12))
         plot_tree(
-            model,
+            best_model,
             filled=True,
             feature_names=X.columns,
             class_names=['Classe 0', 'Classe 1']  # Ajuste conforme suas classes
         )
         plt.title("Árvore de Decisão")
         tree_path = os.path.join(self.root, 'api', 'analysis', 'plots', f'tree_{name}.png')
-        plt.savefig(tree_path)
+        plt.tight_layout()
+        plt.savefig(tree_path, dpi=300)
         print(f"Árvore de decisão salva em {tree_path}")
 
     def individual_model(self, df, name):
         df = df.drop('FIB4', axis=1, errors="ignore")
+        df = self.attributes(df)
         df['iGROUP'] = self.le.fit_transform(df['GROUP'])
         df = self.lda(df, name)
-        df = self.attributes(df)
-        df = self.feature_selection(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
@@ -297,25 +303,25 @@ class Analysis:
 
         # 1. model fat
         df_fat_read = self.read('00_data_fat_n603.csv')
-        df_fat = self.individual_model(df_fat_read, 'fat')
+        # df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
         df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
         df_hcv2 = self.read('00_data_hcv_n230.csv')
         df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        # df_hcv = self.individual_model(df_hcv_read, 'hcv')
 
         # 4. model hbv + hcv
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
-        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
+        # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
         df_fat_read['DSE'] = 1
