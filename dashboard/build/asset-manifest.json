@@ -1,0 +1,15 @@
+{
+  "main.css": "./fibrosis-staging-tool/static/css/main.dbe0a0eb.chunk.css",
+  "main.js": "./fibrosis-staging-tool/static/js/main.0ade558e.chunk.js",
+  "main.js.map": "./fibrosis-staging-tool/static/js/main.0ade558e.chunk.js.map",
+  "static/css/1.f84904a0.chunk.css": "./fibrosis-staging-tool/static/css/1.f84904a0.chunk.css",
+  "static/js/1.184056ce.chunk.js": "./fibrosis-staging-tool/static/js/1.184056ce.chunk.js",
+  "static/js/1.184056ce.chunk.js.map": "./fibrosis-staging-tool/static/js/1.184056ce.chunk.js.map",
+  "runtime~main.js": "./fibrosis-staging-tool/static/js/runtime~main.17c3314e.js",
+  "runtime~main.js.map": "./fibrosis-staging-tool/static/js/runtime~main.17c3314e.js.map",
+  "static/css/main.dbe0a0eb.chunk.css.map": "./fibrosis-staging-tool/static/css/main.dbe0a0eb.chunk.css.map",
+  "static/css/1.f84904a0.chunk.css.map": "./fibrosis-staging-tool/static/css/1.f84904a0.chunk.css.map",
+  "index.html": "./fibrosis-staging-tool/index.html",
+  "precache-manifest.8817d0e03a7708d349980efaff49e15d.js": "./fibrosis-staging-tool/precache-manifest.8817d0e03a7708d349980efaff49e15d.js",
+  "service-worker.js": "./fibrosis-staging-tool/service-worker.js"
+}
