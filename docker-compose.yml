@@ -26,7 +26,7 @@ services:
       - static_volume:/app/django-static
       - build-data:/usr/share/nginx/html
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - django
     networks:
