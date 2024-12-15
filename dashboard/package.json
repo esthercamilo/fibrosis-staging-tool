@@ -39,7 +39,5 @@
   ],
   "devDependencies": {
     "cross-env": "^7.0.3"
-  },
-  "proxy": "http://bioinformatica.fca.unesp.br/fibrosis-staging-tool/",
-  "homepage": "/fibrosis-staging-tool"
+  }
 }
