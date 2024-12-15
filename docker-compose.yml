@@ -1,3 +1,4 @@
+# You are creating this instance in Virginia, Zone A (us-east-1a)
 services:
   django:
     build:
