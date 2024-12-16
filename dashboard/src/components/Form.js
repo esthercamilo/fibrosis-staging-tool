@@ -1,122 +1,78 @@
-import React, { useState } from "react";
-import { Button, Form, Container, Alert } from "react-bootstrap";
+import React from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import coverImage from "../assets/banner.svg";
 import "./Form.css";
-import axios from "axios";
+import Predictor from "./predictor";
 
-function PredictionForm() {
-  const [age, setAge] = useState("");
-  const [ast, setAst] = useState("");
-  const [alt, setAlt] = useState("");
-  const [pl, setPl] = useState("");
-  const [result, setResult] = useState(null);
-  const [explanation, setExplanation] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleSubmit = async event => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Faz a requisição usando parâmetros na query string
-      //const response = await axios.post("http://127.0.0.1:8000/api/predict/", {
-      const response = await axios.post("http://44.203.65.53/api/predict/", {
-        params: {
-          AGE: age,
-          AST: ast,
-          ALT: alt,
-          PL: pl
-        }
-      });
-
-      const data = response.data;
-      setResult(true); // Supondo que a resposta tenha `result`
-      setExplanation(JSON.stringify(data)); // Supondo que a resposta tenha `explanation`
-    } catch (err) {
-      setError("Erro ao realizar a predição");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const Form = () => {
   return (
-    <Container className="mt-4">
-      <h2 className="mb-4">Preditor do nível de fibrose do fígado</h2>
+    <div>
+      <div
+        className="jumbotron top"
+        style={{
+          backgroundImage: `
+            linear-gradient(90deg, rgba(0, 85, 158, 0.9), rgba(45, 174, 193, 0.5), rgba(0, 85, 158, 0.9)),
+            url(${coverImage})
+          `,
+          backgroundSize: "cover",
+          backgroundPosition: "0, 100% 0;",
+          height: "25vh",
+          color: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <h2 className="left">FibMaster METAVIR Calculator</h2>
+      </div>
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group controlId="formAge" className="form-group">
-          <Form.Label>Idade</Form.Label>
-          <Form.Control
-            type="number"
-            placeholder="Digite a idade"
-            value={age}
-            onChange={e => setAge(e.target.value)}
-            required
-          />
-        </Form.Group>
+      <div className="mt-4">
+        <ul className="nav nav-tabs">
+          <li className="nav-item">
+            <a className="nav-link active" href="#home" data-toggle="tab">
+              Home
+            </a>
+          </li>
+          <li className="nav-item">
+            <a className="nav-link" href="#prediction" data-toggle="tab">
+              Prediction
+            </a>
+          </li>
+          <li className="nav-item">
+            <a className="nav-link" href="#about" data-toggle="tab">
+              About
+            </a>
+          </li>
+        </ul>
 
-        <Form.Group controlId="formAst" className="form-group">
-          <Form.Label>AST</Form.Label>
-          <Form.Control
-            type="number"
-            placeholder="Digite o valor de AST"
-            value={ast}
-            onChange={e => setAst(e.target.value)}
-            required
-          />
-        </Form.Group>
-
-        <Form.Group controlId="formAlt" className="form-group">
-          <Form.Label>ALT</Form.Label>
-          <Form.Control
-            type="number"
-            placeholder="Digite o valor de ALT"
-            value={alt}
-            onChange={e => setAlt(e.target.value)}
-            required
-          />
-        </Form.Group>
-
-        <Form.Group controlId="formPl" className="form-group">
-          <Form.Label>PL</Form.Label>
-          <Form.Control
-            type="number"
-            placeholder="Digite o valor de PL"
-            value={pl}
-            onChange={e => setPl(e.target.value)}
-            required
-          />
-        </Form.Group>
-
-        <Button
-          variant="primary"
-          type="submit"
-          disabled={loading}
-          className="mt-3"
-        >
-          {loading ? "Carregando..." : "Submeter"}
-        </Button>
-      </Form>
-
-      {error && (
-        <Alert variant="danger" className="mt-3">
-          {error}
-        </Alert>
-      )}
-
-      {result && (
-        <div className="mt-4">
-          <h3>Classe Resultante: {result}</h3>
-          {explanation && (
+        <div className="tab-content mt-3">
+          <div className="tab-pane fade show active" id="home">
+            <h3>Application Overview</h3>
             <p>
-              <strong>Explicação:</strong> {explanation}
+              Viral hepatitis (HBV and HCV) and non-alcoholic fatty liver
+              disease (NAFLD) are public health problems and can cause liver
+              fibrosis. Scores combining biomarker quantifications (such as APRI
+              and FIB-4) are an alternative to liver biopsy for staging liver
+              fibrosis. Based on the markers AGE, AST, ALT, and PL, we predict
+              whether fibrosis belongs to group 1 or group 2. These markers help
+              assess liver health and fibrosis severity. By analyzing their
+              levels, we can distinguish between different fibrosis groups,
+              providing valuable information for diagnosis and treatment
+              planning.
             </p>
-          )}
+          </div>
+          <div className="tab-pane fade" id="prediction">
+            <h5>Fill the data</h5>
+            <Predictor />
+          </div>
+          <div className="tab-pane fade" id="about">
+            <h3>About</h3>
+            <p>Conteúdo da aba About...</p>
+          </div>
         </div>
-      )}
-    </Container>
+      </div>
+    </div>
   );
-}
+};
 
-export default PredictionForm;
+export default Form;
