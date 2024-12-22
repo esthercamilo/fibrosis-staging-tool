@@ -8,12 +8,19 @@ const Predictor = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [age, setAge] = useState(null);
+  const [ast, setAst] = useState(null);
+  const [alt, setAlt] = useState(null);
+  const [pl, setPl] = useState(null);
+
   const fetchData = async () => {
     setLoading(true); // Inicia o carregamento
     setError(null); // Reseta os erros
 
     try {
-      const response = await axios.get("http://0.0.0.0:8000/api/health-check/");
+      const response = await axios.post(
+        `http://0.0.0.0:8000/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
+      );
       console.log(response);
       setData(response.data.response);
     } catch (error) {
@@ -40,6 +47,8 @@ const Predictor = () => {
                   className="form-control"
                   id="age"
                   placeholder="Enter AGE"
+                  value={age || ""}
+                  onChange={(e) => setAge(e.target.value)}
                 />
               </div>
             </div>
@@ -54,6 +63,8 @@ const Predictor = () => {
                   className="form-control"
                   id="ast"
                   placeholder="Enter AST"
+                  value={ast || ""}
+                  onChange={(e) => setAst(e.target.value)}
                 />
               </div>
             </div>
@@ -68,6 +79,8 @@ const Predictor = () => {
                   className="form-control"
                   id="alt"
                   placeholder="Enter ALT"
+                  value={alt || ""}
+                  onChange={(e) => setAlt(e.target.value)}
                 />
               </div>
             </div>
@@ -82,6 +95,8 @@ const Predictor = () => {
                   className="form-control"
                   id="pl"
                   placeholder="Enter PL"
+                  value={pl || ""}
+                  onChange={(e) => setPl(e.target.value)}
                 />
               </div>
             </div>
@@ -94,8 +109,8 @@ const Predictor = () => {
             </button>
           </div>
         </div>
-        <div className="col-9 borda">
-          <h1>{data}</h1>
+        <div className="col-9 ">
+          <h5>{JSON.stringify(data)}</h5>
         </div>
       </div>
     </div>
