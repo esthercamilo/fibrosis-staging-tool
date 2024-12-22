@@ -11,10 +11,11 @@ COPY . /app/
 
 RUN mkdir -p /app/media
 
-WORKDIR /app/dashboard
-RUN npm install
-ENV PUBLIC_URL=/fibrosis-staging-tool
-RUN npm run build
+# Agora está ficando direto na máquina Host. Só a API fica no container
+# WORKDIR /app/dashboard
+# RUN npm install
+# ENV PUBLIC_URL=/fibrosis-staging-tool
+# RUN npm run build
 
 WORKDIR /app
 RUN python manage.py collectstatic --noinput
