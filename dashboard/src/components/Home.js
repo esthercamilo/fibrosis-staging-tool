@@ -148,7 +148,7 @@ const Home = () => {
         <p className="small m-0">
           Este site é uma iniciativa independente e não reflete as opiniões ou
           posicionamentos institucionais da UNESP. <br />
-          <span className="motiva">
+          {/* <span className="motiva">
             Construído por &nbsp;
             <a
               href="https://www.motivaservicos.com.br"
@@ -157,7 +157,7 @@ const Home = () => {
             >
               Motiva Serviços ME.
             </a>
-          </span>
+          </span> */}
         </p>
       </footer>
     </div>
