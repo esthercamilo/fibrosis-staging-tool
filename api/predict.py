@@ -1,6 +1,9 @@
 import os
 import numpy as np
 import joblib
+import pandas
+
+from api.analysis.pipeline import Analysis
 
 
 class Predict:
@@ -10,10 +13,59 @@ class Predict:
         else:
             self.root = os.path.abspath('..')
 
-    def calculate(self, data):
-        self
-        return [65, 289.0, 20.0, 82.0, 3.01, 4225, 8.06, 17.0, 400.0, 4.472, 6724.0, 9.05, 9.06, 1.734,
-                False, False, False, True, False]
+    def lda_load(self, df):
+        # fulldata set
+        results_folder = os.path.join(self.root, 'api', 'analysis', 'results')
+        lda_datasets = [x for x in os.listdir(results_folder) if 'lda_model' in x]
+
+        for lda_d in lda_datasets:
+            combo_ = lda_d.replace('lda_model_', '').replace('.pkl', '')
+            combo = combo_.split('__')
+            X = df[combo]
+            modelpath = os.path.join(self.root, 'api', 'analysis', 'results', lda_d)
+            lda_loaded = joblib.load(modelpath)
+            print(lda_loaded.feature_names_in_)
+            prediction = lda_loaded.predict(X)
+            df[combo_] = prediction
+        return df
+
+    def calculate(self, df):
+
+        df['FIB4'] = (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
+
+        list_sorted = Analysis().fields_order()
+
+        result = {
+            'FIB4': (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST'])),
+            'AGE2': df['AGE'] ** 2,
+            'AGEsqrt': np.sqrt(df['AGE']),
+            'AST': df['AST'] ** 2,
+            'ASTsqrt': np.sqrt(df['AST']),
+            'ALT2': df['ALT'] ** 2,
+            'ALTsqrt': np.sqrt(df['ALT']),
+            'PL2': df['PL'] ** 2,
+            'PLsqrt': np.sqrt(df['PL']),
+            'FIB42': df['FIB4'] ** 2,
+            'FIB4sqrt': np.sqrt(df['FIB4']),
+            'AST/ALT': df['AST'] / df['ALT'],
+            'AST/AGE': df['AST'] / df['AGE'],
+            'ALT/AGE': df['ALT'] / df['AGE'],
+            'PL/AGE': df['PL'] / df['AGE'],
+            'PL*ALT': df['PL'] * df['ALT'],
+            'PL*AGE': df['PL'] * df['AGE'],
+            'PL*AST': df['PL'] * df['AST'],
+            'ALT*AST': df['ALT'] * df['AST'],
+            'ALT*AGE': df['ALT'] * df['AGE'],
+            'AGE*AST': df['AGE'] * df['AST'],
+            'PL-1': 1 / df['PL'],
+            'ALT^2': 1 / (df['ALT'] ** 2)
+        }
+        result.update(df)
+        sorted_result = {k: [v] for k, v in dict(zip(list_sorted, [result[x] for x in list_sorted])).items()}
+        partial_df = pandas.DataFrame(sorted_result)
+        # LDA data
+        full_df = self.lda_load(partial_df)
+        return full_df
 
     def run(self, data: dict):
 
@@ -45,4 +97,3 @@ class Predict:
 
 if __name__ == '__main__':
     Predict().run()
-

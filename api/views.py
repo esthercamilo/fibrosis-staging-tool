@@ -20,10 +20,10 @@ from core.settings import BASE_DIR
 @api_view(['POST'])
 def prediction_view(request):
     """
-    Obtém questão
+    Prediction of the Fibrosis severity from Molecular Markers
     """
     try:
-        data = {k: v[0] for k, v in dict(request.query_params).items()}
+        data = {k: float(v[0]) for k, v in dict(request.query_params).items()}
         prediction = Predict(root=BASE_DIR).run(data)
         return JsonResponse(prediction, status=status.HTTP_200_OK)
     except Exception as e:

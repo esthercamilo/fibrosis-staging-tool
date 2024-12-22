@@ -1,18 +1,15 @@
 import os.path
 import os.path
+import shutil
 from itertools import combinations
-
-# from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import auc
 from sklearn.metrics import (
-    classification_report,
     roc_auc_score,
     roc_curve,
     precision_score,
@@ -22,9 +19,8 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import PolynomialFeatures
 from sklearn.tree import ExtraTreeClassifier, plot_tree
-from joblib import dump, load
+from joblib import dump
 
 
 class Analysis:
@@ -96,6 +92,10 @@ class Analysis:
 
     def lda(self, df, name):
         """Discriminant function (DF) definition"""
+
+        temp_results = os.path.join(self.root, 'api', 'analysis', 'results_temp')
+        os.makedirs(temp_results, exist_ok=True)
+
         y = df['iGROUP']
 
         plt.figure(figsize=(10, 8))
@@ -109,7 +109,7 @@ class Analysis:
 
         for combo in combinations_features:
 
-            if 1 < len(combo) < 6:
+            if len(combo) > 6 or len(combo) <= 1:
                 continue
             undersampler = RandomUnderSampler(random_state=42)
             X = df[list(combo)]
@@ -121,13 +121,18 @@ class Analysis:
             # LDA
             lda = LinearDiscriminantAnalysis()
             lda.fit(X_train, y_train)
+
+            str_features = '__'.join(combo)
+            modelpath = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{str_features}.pkl')
+            dump(lda, modelpath)
+
             y_prob = lda.predict_proba(X_test)[:, 1]
 
             # Curva ROC
             fpr, tpr, _ = roc_curve(y_test, y_prob)
             roc_auc = auc(fpr, tpr)
             scores = lda.transform(X)
-            colname = '_'.join(combo)
+            colname = '__'.join(combo)
 
             # Results só guarda os 5 maiores resultado, senão ficaria muito cheio
             if len(results) < 5:
@@ -144,6 +149,13 @@ class Analysis:
         for sr in sorted_result:
             plt.plot(sr[0], sr[1], label=f"{sr[2]} (AUC = {sr[3]:.2f})")
             df[sr[4]] = sr[5]
+            # Copy fulldata to folder results
+            source_file = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{sr[4]}.pkl')
+            target_folder = os.path.join(self.root, 'api', 'analysis', 'results')
+            shutil.move(source_file, target_folder)
+
+        fulldata_lda = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_traingdata.csv')
+        df.to_csv(fulldata_lda)
 
         # Plot da curva ROC
         plt.plot([0, 1], [0, 1], 'k--', label="Random")
@@ -152,53 +164,80 @@ class Analysis:
         plt.title("ROC curves of LDA for different combinations")
         plt.legend()
         plt.savefig(os.path.join(self.root, 'api', 'analysis', 'plots', f'lda_{name}.png'))
+
+        try:
+            shutil.rmtree(temp_results, ignore_errors=True)
+        except Exception as e:
+            print(e)
+
         return df
 
+    @staticmethod
+    def fields_order():
+        """
+        This field sorting is important to make the prediction. Whenever o edit the function attributes, this must
+        be edited as well
+        """
+        return [
+            'AGE', 'AST', 'ALT', 'PL',
+            'FIB4', 'AGE2', 'AGEsqrt', 'AST', 'ASTsqrt', 'ALT2', 'ALTsqrt', 'PL2', 'PLsqrt', 'FIB42', 'FIB4sqrt',
+            'AST/ALT', 'AST/AGE', 'ALT/AGE', 'PL/AGE', 'PL*ALT', 'PL*AGE', 'PL*AST', 'ALT*AST', 'ALT*AGE',
+            'AGE*AST', 'PL-1', 'ALT^2'
+        ]
+
     def attributes(self, df):
-        """
-        AGE2, AGE 1/2, AST 2, AST 1/2, ALT 2, ALT 1/2, PL 2, PL 1/2, FIB-4 2, FIB-4 1/2 plus LDAs
-        """
 
+        # 1
         df['FIB4'] = (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
-
+        # 2
         df['AGE2'] = df['AGE'] ** 2
+        # 3
         df['AGEsqrt'] = np.sqrt(df['AGE'])
-
+        # 4
         df['AST'] = df['AST'] ** 2
+        # 5
         df['ASTsqrt'] = np.sqrt(df['AST'])
-
+        # 6
         df['ALT2'] = df['ALT'] ** 2
+        # 7
         df['ALTsqrt'] = np.sqrt(df['ALT'])
-
+        # 8
         df['PL2'] = df['PL'] ** 2
+        # 9
         df['PLsqrt'] = np.sqrt(df['PL'])
-
+        # 10
         df['FIB42'] = df['FIB4'] ** 2
+        # 11
         df['FIB4sqrt'] = np.sqrt(df['FIB4'])
-
+        # 12
         df['AST/ALT'] = df['AST'] / df['ALT']
+        # 13
         df['AST/AGE'] = df['AST'] / df['AGE']
+        # 14
         df['ALT/AGE'] = df['ALT'] / df['AGE']
+        # 15
         df['PL/AGE'] = df['PL'] / df['AGE']
-
+        # 16
         df['PL*ALT'] = df['PL'] * df['ALT']
+        # 17
         df['PL*AGE'] = df['PL'] * df['AGE']
+        # 18
         df['PL*AST'] = df['PL'] * df['AST']
+        # 19
         df['ALT*AST'] = df['ALT'] * df['AST']
+        # 20
         df['ALT*AGE'] = df['ALT'] * df['AGE']
+        # 21
         df['AGE*AST'] = df['AGE'] * df['AST']
-
+        # 22
         df['PL-1'] = 1 / df['PL']
+        # 23
         df['ALT^2'] = 1 / (df['ALT'] ** 2)
 
-        # X = df.drop(['GROUP', 'iGROUP'], axis=1, errors="ignore")
-        # poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
-        # X_poly = poly.fit_transform(X)
-        # feature_names = poly.get_feature_names_out()
-        # df_poly = pd.DataFrame(X_poly, columns=feature_names)
-        # df = df.reset_index(drop=True)
-        # df_poly = df_poly.reset_index(drop=True)
-        # df_poly['GROUP'] = df['GROUP']
+        # Verify fields
+        if df.columns.size != len(self.fields_order()) + 1:
+            raise Exception("You need to register all fields in the function fields_order")
+
         return df
 
     def decision_tree(self, df, name):
