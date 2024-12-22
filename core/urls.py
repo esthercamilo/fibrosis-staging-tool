@@ -6,7 +6,7 @@ from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from api.views import prediction_view
+from api.views import prediction_view, healthcheck
 from core.utils import create_media_directory
 
 url = os.environ.get("URL")
@@ -29,6 +29,7 @@ create_media_directory()
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/predict/', prediction_view, name='prediction_view'),
+    path('api/health-check/', healthcheck, name='healthcheck'),
     path('api-auth/', include('rest_framework.urls'), name='rest_framework_transaction'),
     path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

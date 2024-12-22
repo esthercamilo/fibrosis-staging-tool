@@ -29,3 +29,12 @@ def prediction_view(request):
     except Exception as e:
         return JsonResponse({"error": 'Fail to predict. Verify if you filled all data correctly. Details: ' + str(e)},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def healthcheck(request):
+    """
+    Verify connection with api
+    """
+    return JsonResponse({"response": "healthy"}, status=status.HTTP_200_OK)
+

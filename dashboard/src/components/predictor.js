@@ -1,8 +1,28 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./predictor.css";
+import axios from "axios";
 
 const Predictor = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchData = async () => {
+    setLoading(true); // Inicia o carregamento
+    setError(null); // Reseta os erros
+
+    try {
+      const response = await axios.get("http://0.0.0.0:8000/api/health-check/");
+      console.log(response);
+      setData(response.data.response);
+    } catch (error) {
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -65,12 +85,18 @@ const Predictor = () => {
                 />
               </div>
             </div>
-            <button type="submit" className="btn btn-primary mt-3 mb-3">
+            <button
+              type="submit"
+              className="btn btn-primary mt-3 mb-3"
+              onClick={fetchData}
+            >
               Submit
             </button>
           </div>
         </div>
-        <div className="col-9 borda"></div>
+        <div className="col-9 borda">
+          <h1>{data}</h1>
+        </div>
       </div>
     </div>
   );
