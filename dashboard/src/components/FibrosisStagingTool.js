@@ -1,10 +1,8 @@
 import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
 import coverImage from "../assets/banner.svg";
-import "./Form.css";
 import Predictor from "./predictor";
 
-const Form = () => {
+const FibrosisStagingTool = () => {
   return (
     <div>
       <div
@@ -23,30 +21,30 @@ const Form = () => {
           justifyContent: "center",
         }}
       >
-        <h2 className="left">FibMaster METAVIR Calculator</h2>
+        <h2 className="left">Fibrosis Staging Tool</h2>
       </div>
 
       <div className="mt-4">
         <ul className="nav nav-tabs">
           <li className="nav-item">
-            <a className="nav-link active" href="#home" data-toggle="tab">
+            <a className="nav-link active" href="#home" data-bs-toggle="tab">
               Home
             </a>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="#prediction" data-toggle="tab">
+            <a className="nav-link" href="#prediction" data-bs-toggle="tab">
               Prediction
             </a>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="#about" data-toggle="tab">
+            <a className="nav-link" href="#about" data-bs-toggle="tab">
               About
             </a>
           </li>
         </ul>
 
         <div className="tab-content mt-3">
-          <div className="tab-pane fade show active" id="home">
+          <div className="tab-pane fade show active p-3" id="home">
             <h3>Application Overview</h3>
             <p>
               Viral hepatitis (HBV and HCV) and non-alcoholic fatty liver
@@ -62,12 +60,22 @@ const Form = () => {
             </p>
           </div>
           <div className="tab-pane fade" id="prediction">
-            <h5>Fill the data</h5>
             <Predictor />
           </div>
-          <div className="tab-pane fade" id="about">
+          <div className="tab-pane fade m-4" id="about">
             <h3>About</h3>
-            <p>Conteúdo da aba About...</p>
+            <p className="mt-3">Publication Link</p>
+            <p>
+              Versioning at{" "}
+              <a
+                href="https://github.com/esthercamilo/fibrosis-staging-tool/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
+            </p>
+            <p>Contact: rafael.simoes@unesp.br</p>
           </div>
         </div>
       </div>
@@ -75,4 +83,4 @@ const Form = () => {
   );
 };
 
-export default Form;
+export default FibrosisStagingTool;
