@@ -25,10 +25,10 @@ def prediction_view(request):
     try:
         data = {k: float(v[0]) for k, v in dict(request.query_params).items()}
         prediction = Predict(root=BASE_DIR).run(data)
-        return JsonResponse(prediction, status=status.HTTP_200_OK)
+        return JsonResponse({"response": prediction}, status=status.HTTP_200_OK)
     except Exception as e:
-        return JsonResponse({"error": 'Fail to predict. Verify if you filled all data correctly. Details: ' + str(e)},
-                            status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse({"response": 'Fail to predict. Verify if you filled all data correctly. Details: ' + str(e)},
+                            status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

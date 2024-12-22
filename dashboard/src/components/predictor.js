@@ -19,7 +19,7 @@ const Predictor = () => {
 
     try {
       const response = await axios.post(
-        `http://0.0.0.0:8000/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
+        `https://bioinformatica.fca.unesp.br/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
       );
       console.log(response);
       setData(response.data.response);
