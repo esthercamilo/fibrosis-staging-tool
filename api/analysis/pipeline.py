@@ -15,7 +15,8 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     accuracy_score,
-    f1_score
+    f1_score,
+    make_scorer
 )
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
@@ -30,6 +31,12 @@ class Analysis:
             self.root = root
         else:
             self.root = os.path.abspath('../..')
+        self.results = os.path.join(self.root, 'api', 'analysis', 'results')
+        self.temp_results = os.path.join(self.root, 'api', 'analysis', 'results_temp')
+        self.plots = os.path.join(self.root, 'api', 'analysis', 'plots')
+        os.makedirs(self.results, exist_ok=True)
+        os.makedirs(self.temp_results, exist_ok=True)
+        os.makedirs(self.plots, exist_ok=True)
 
     def read(self, f):
         root_path = self.root
@@ -37,71 +44,15 @@ class Analysis:
         df = pd.read_csv(os.path.join(datapath, f), sep='\t')
         return df
 
-    def description(self, df):
-        path_plots = os.path.join(self.root, 'api', 'analysis', 'plots')
-        path_results = os.path.join(self.root, 'api', 'analysis', 'results')
-
-        sets = ['AGE', 'AST', 'ALT', 'PL']
-
-        # Remove integer columns for description
-        df = df.drop(['iGROUP', 'iDSE'], axis=1)
-
-        for s in sets:
-            sns.boxplot(data=df, x='GROUP', y=s, hue='DSE')  # Adiciona a variável 'DSE'
-            plt.title(f'{s} distribution by Group and Condition')
-            plt.legend(title='Condition')
-            plt.savefig(os.path.join(path_plots, f'{s}_by_group_and_dse.png'))
-            plt.close()  # Fecha o plot para evitar sobreposição em chamadas subsequentes
-
-        # Plot Group and Condition
-        tabela_contagem = df.groupby(['GROUP', 'DSE']).size().reset_index(name='COUNT')
-        tabela_contagem.to_csv(os.path.join(path_results, 'count_table.csv'))
-        plt.figure(figsize=(8, 6))
-        sns.barplot(data=tabela_contagem, x='GROUP', y='COUNT', hue='DSE')
-        plt.title('Count instances by GROUP and DSE')
-        plt.ylabel('Instance number')
-        plt.xlabel('GROUP')
-        plt.legend(title='DSE')
-        plt.tight_layout()
-        path_plots = os.path.join(self.root, 'api', 'analysis', 'plots')
-        plt.savefig(os.path.join(path_plots, 'count_by_group_and_dse.png'))
-
-        # Plot Group only
-        tabela_contagem = df.groupby(['GROUP']).size().reset_index(name='COUNT')
-        tabela_contagem.to_csv(os.path.join(path_results, 'count_group_table.csv'))
-        plt.figure(figsize=(8, 6))
-        sns.barplot(data=tabela_contagem, x='GROUP', y='COUNT')
-        plt.title('Count instances by GROUP')
-        plt.ylabel('Instance number')
-        plt.xlabel('GROUP')
-        plt.tight_layout()
-        path_plots = os.path.join(self.root, 'api', 'analysis', 'plots')
-        plt.savefig(os.path.join(path_plots, 'count_by_group.png'))
-
-        # Plot Condition only
-        tabela_contagem = df.groupby(['DSE']).size().reset_index(name='COUNT')
-        tabela_contagem.to_csv(os.path.join(path_results, 'count_group_table.csv'))
-        plt.figure(figsize=(8, 6))
-        sns.barplot(data=tabela_contagem, x='DSE', y='COUNT')
-        plt.title('Count instances by Condition')
-        plt.ylabel('Instance number')
-        plt.xlabel('Condition')
-        plt.tight_layout()
-        path_plots = os.path.join(self.root, 'api', 'analysis', 'plots')
-        plt.savefig(os.path.join(path_plots, 'count_by_condition.png'))
-
     def lda(self, df, name):
         """Discriminant function (DF) definition"""
 
-        temp_results = os.path.join(self.root, 'api', 'analysis', 'results_temp')
-        os.makedirs(temp_results, exist_ok=True)
-
-        y = df['iGROUP']
+        y = df['GROUP']
 
         plt.figure(figsize=(10, 8))
 
         # Todas as combinações possíveis
-        exclude = ['GROUP', 'DSE', 'iGROUP']
+        exclude = ['GROUP', 'DSE']
         features = [x for x in df.columns if x not in exclude][0:10]
         combinations_features = sum([list(combinations(features, i)) for i in range(1, len(features) + 1)], [])
 
@@ -116,23 +67,23 @@ class Analysis:
 
             X_resampled, y_resampled = undersampler.fit_resample(X, y)
             # Dividindo os dados em treino e teste
-            X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.3,
+            X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2,
                                                                 random_state=42)
             # LDA
             lda = LinearDiscriminantAnalysis()
             lda.fit(X_train, y_train)
 
-            str_features = '__'.join(combo)
-            modelpath = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{str_features}.pkl')
+            str_features = '_'.join(combo)
+            modelpath = os.path.join(self.temp_results, f'lda_model_{name}__{str_features}.pkl')
             dump(lda, modelpath)
 
             y_prob = lda.predict_proba(X_test)[:, 1]
 
             # Curva ROC
-            fpr, tpr, _ = roc_curve(y_test, y_prob)
+            fpr, tpr, _ = roc_curve(y_test, y_prob, pos_label='G2')
             roc_auc = auc(fpr, tpr)
             scores = lda.transform(X)
-            colname = '__'.join(combo)
+            colname = '_'.join(combo)
 
             # Results só guarda os 5 maiores resultado, senão ficaria muito cheio
             if len(results) < 5:
@@ -150,11 +101,11 @@ class Analysis:
             plt.plot(sr[0], sr[1], label=f"{sr[2]} (AUC = {sr[3]:.2f})")
             df[sr[4]] = sr[5]
             # Copy fulldata to folder results
-            source_file = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{sr[4]}.pkl')
-            target_folder = os.path.join(self.root, 'api', 'analysis', 'results')
-            shutil.move(source_file, target_folder)
+            source_file = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{name}__{sr[4]}.pkl')
+            target_file = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_model_{name}__{sr[4]}.pkl')
+            shutil.move(source_file, target_file)
 
-        fulldata_lda = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_traingdata.csv')
+        fulldata_lda = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_traingdata_{name}.csv')
         df.to_csv(fulldata_lda)
 
         # Plot da curva ROC
@@ -165,28 +116,10 @@ class Analysis:
         plt.legend()
         plt.savefig(os.path.join(self.root, 'api', 'analysis', 'plots', f'lda_{name}.png'))
 
-        try:
-            shutil.rmtree(temp_results, ignore_errors=True)
-        except Exception as e:
-            print(e)
-
         return df
 
     @staticmethod
-    def fields_order():
-        """
-        This field sorting is important to make the prediction. Whenever o edit the function attributes, this must
-        be edited as well
-        """
-        return [
-            'AGE', 'AST', 'ALT', 'PL',
-            'FIB4', 'AGE2', 'AGEsqrt', 'AST', 'ASTsqrt', 'ALT2', 'ALTsqrt', 'PL2', 'PLsqrt', 'FIB42', 'FIB4sqrt',
-            'AST/ALT', 'AST/AGE', 'ALT/AGE', 'PL/AGE', 'PL*ALT', 'PL*AGE', 'PL*AST', 'ALT*AST', 'ALT*AGE',
-            'AGE*AST', 'PL-1', 'ALT^2'
-        ]
-
-    def attributes(self, df):
-
+    def attributes(df):
         # 1
         df['FIB4'] = (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
         # 2
@@ -234,16 +167,12 @@ class Analysis:
         # 23
         df['ALT^2'] = 1 / (df['ALT'] ** 2)
 
-        # Verify fields
-        if df.columns.size != len(self.fields_order()) + 1:
-            raise Exception("You need to register all fields in the function fields_order")
-
         return df
 
     def decision_tree(self, df, name):
         # Dividindo em variáveis independentes (X) e dependente (y)
-        X = df.drop(['GROUP', 'DSE', 'iGROUP'], axis=1, errors='ignore')
-        y = df['iGROUP']
+        X = df.drop(['GROUP', 'DSE'], axis=1, errors='ignore')
+        y = df['GROUP']
 
         # Balanceamento dos dados
         undersampler = RandomUnderSampler(random_state=42)
@@ -251,7 +180,7 @@ class Analysis:
 
         # Dividindo os dados em treino e teste
         X_train, X_test, y_train, y_test = train_test_split(
-            X_resampled, y_resampled, test_size=0.3, random_state=42
+            X_resampled, y_resampled, test_size=0.2, random_state=42
         )
 
         base_model = ExtraTreeClassifier(random_state=42)
@@ -265,13 +194,14 @@ class Analysis:
             'max_features': [None, 'sqrt', 'log2'],
             'class_weight': [None, 'balanced'],
             'min_impurity_decrease': [0.0, 0.01, 0.1],
-            'ccp_alpha': [0.0, 0.01, 0.1]
+            'ccp_alpha': [0.0, 0.01, 0.1],
         }
 
+        scoring = make_scorer(roc_auc_score, needs_proba=True)
         grid_search = GridSearchCV(
             estimator=base_model,
             param_grid=param_grid,
-            scoring='f1',  # Altere a métrica conforme necessário
+            scoring=scoring,
             cv=5,  # Validação cruzada com 5 divisões
             verbose=1,
             n_jobs=-1  # Usa todos os núcleos disponíveis
@@ -280,17 +210,18 @@ class Analysis:
         grid_search.fit(X_train, y_train)
 
         best_model = grid_search.best_estimator_
-        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1.pkl')
+        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', f'model1_{name}.pkl')
         dump(best_model, modelpath)
 
         y_pred = best_model.predict(X_test)
         y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
         # Métricas de avaliação
+
         accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, pos_label='G2')
+        recall = recall_score(y_test, y_pred, pos_label='G2')
+        f1 = f1_score(y_test, y_pred, pos_label='G2')
         roc_auc = roc_auc_score(y_test, y_pred_proba)
 
         report_path = os.path.join(self.root, 'api', 'analysis', 'results', f'tree_{name}.csv')
@@ -302,7 +233,7 @@ class Analysis:
             f.write(f"Area under the curve (AUC): {roc_auc}\n")
 
         # Curva ROC
-        fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+        fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba, pos_label='G2')
 
         plt.figure(figsize=(10, 6))
         plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC Curve (AUC = {roc_auc:.2f})')
@@ -332,7 +263,6 @@ class Analysis:
     def individual_model(self, df, name):
         df = df.drop('FIB4', axis=1, errors="ignore")
         df = self.attributes(df)
-        df['iGROUP'] = self.le.fit_transform(df['GROUP'])
         df = self.lda(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
@@ -342,25 +272,25 @@ class Analysis:
 
         # 1. model fat
         df_fat_read = self.read('00_data_fat_n603.csv')
-        # df_fat = self.individual_model(df_fat_read, 'fat')
+        df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
         df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
         df_hcv2 = self.read('00_data_hcv_n230.csv')
         df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        # df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        df_hcv = self.individual_model(df_hcv_read, 'hcv')
 
         # 4. model hbv + hcv
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
-        # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
+        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
         df_fat_read['DSE'] = 1
@@ -368,6 +298,11 @@ class Analysis:
         df_hcv_read['DSE'] = 3
         df_global = pd.concat([df_fat_read, df_hbv_read, df_hcv_read])
         df_global = self.individual_model(df_global, 'global')
+
+        try:
+            shutil.rmtree(self.temp_results, ignore_errors=True)
+        except Exception as e:
+            print(e)
 
 
 if __name__ == '__main__':

@@ -19,21 +19,20 @@ class Predict:
         lda_datasets = [x for x in os.listdir(results_folder) if 'lda_model' in x]
 
         for lda_d in lda_datasets:
-            combo_ = lda_d.replace('lda_model_', '').replace('.pkl', '')
-            combo = combo_.split('__')
-            X = df[combo]
+            combo = lda_d.split('__')[-1].replace('.pkl', '')
+            X = df[[combo]]
             modelpath = os.path.join(self.root, 'api', 'analysis', 'results', lda_d)
             lda_loaded = joblib.load(modelpath)
             print(lda_loaded.feature_names_in_)
             prediction = lda_loaded.predict(X)
-            df[combo_] = prediction
+            df[combo] = prediction
         return df
 
     def calculate(self, df):
 
         df['FIB4'] = (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
 
-        list_sorted = Analysis().fields_order()
+        # list_sorted = Analysis().fields_order()
 
         result = {
             'FIB4': (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST'])),
@@ -61,15 +60,15 @@ class Predict:
             'ALT^2': 1 / (df['ALT'] ** 2)
         }
         result.update(df)
-        sorted_result = {k: [v] for k, v in dict(zip(list_sorted, [result[x] for x in list_sorted])).items()}
-        partial_df = pandas.DataFrame(sorted_result)
+        # sorted_result = {k: [v] for k, v in dict(zip(list_sorted, [result[x] for x in list_sorted])).items()}
+        partial_df = pandas.DataFrame({k: [v] for k, v in result.items()})
         # LDA data
         full_df = self.lda_load(partial_df)
         return full_df
 
     def run(self, data: dict):
 
-        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1.pkl')
+        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1_global.pkl')
         model = joblib.load(modelpath)
 
         # Ordem dos dos inputs
@@ -96,4 +95,5 @@ class Predict:
 
 
 if __name__ == '__main__':
-    Predict().run()
+    d = {'AGE': 40.0, 'ALT': 1.0, 'AST': 1.0, 'PL': 1.0}
+    Predict().run(d)

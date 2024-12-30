@@ -4,7 +4,6 @@ from rest_framework import status
 from api.predict import Predict
 from drf_yasg import openapi
 from rest_framework.decorators import api_view
-
 from core.settings import BASE_DIR
 
 
