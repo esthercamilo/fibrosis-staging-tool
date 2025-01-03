@@ -20,12 +20,11 @@ class Predict:
 
         for lda_d in lda_datasets:
             combo = lda_d.split('__')[-1].replace('.pkl', '')
-            X = df[[combo]]
+            X = df[combo.split('_')]
             modelpath = os.path.join(self.root, 'api', 'analysis', 'results', lda_d)
             lda_loaded = joblib.load(modelpath)
-            print(lda_loaded.feature_names_in_)
-            prediction = lda_loaded.predict(X)
-            df[combo] = prediction
+            score = lda_loaded.transform(X)
+            df[combo] = score
         return df
 
     def calculate(self, df):
@@ -71,29 +70,37 @@ class Predict:
         modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1_global.pkl')
         model = joblib.load(modelpath)
 
-        # Ordem dos dos inputs
-        # AGE,AST,ALT,PL,FIB4,AGE2,AGEsqrt,ASTsqrt,ALT2,ALTsqrt,PL2,PLsqrt,FIB42,FIB4sqrt,DSE_FAT_N603,DSE_HBV_N177,
-        # DSE_HBV_N568,DSE_HCV_N230,DSE_HCV_N74
-
         # Porém o usuário só entra com AGE,AST,ALT,PL. Todos os outros são calculados internamente
         inputs = self.calculate(data)
+        feature_names = list(model.feature_names_in_)
+        inputs = inputs[feature_names]
 
-        # Extrair os valores dos inputs (ajuste conforme necessário)
         features = np.array(inputs).reshape(1, -1)
 
         # Fazer a previsão
-        dict_groups = {1: 'G1', 2: 'G2'}
         prediction = model.predict(features)
 
-        # Obter as probabilidades das classes (isso dá uma métrica de confiança)
-        probabilities = model.predict_proba(features)
+        if prediction[0] == 'G1':
+            probG = round(float(model.predict_proba(features)[0][0]), 2) * 100
+        else:
+            probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
-        # A maior probabilidade é a confiança na classe predita
-        confidence = float(probabilities[0][prediction[0]])
-
-        return {'prediction': dict_groups[prediction.tolist()[0]], 'confidence': confidence}
+        return {'prediction': prediction[0], 'confidence': probG}
 
 
 if __name__ == '__main__':
-    d = {'AGE': 40.0, 'ALT': 1.0, 'AST': 1.0, 'PL': 1.0}
-    Predict().run(d)
+    with open('/home/esther/GitProjects/fibrosis-staging-tool/api/analysis/data/00_data_hcv_n74_proprio.csv', 'r') as f:
+        f.readline()
+        acertos = 0
+        erros = 0
+        for line in f:
+            d = line.rstrip('\n').split('\t')
+            classe = d[-1]
+            pred = Predict().run({'AGE': float(d[0]), 'ALT': float(d[1]), 'AST': float(d[2]), 'PL': float(d[3])})
+            print(f"{classe}    {pred}")
+            if classe == pred['prediction']:
+                acertos += 1
+            else:
+                erros += 1
+        print(f"Acertos: {acertos}")
+        print(f"Erros: {erros}")
