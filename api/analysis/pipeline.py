@@ -73,6 +73,9 @@ class Analysis:
             lda = LinearDiscriminantAnalysis()
             lda.fit(X_train, y_train)
 
+            coef = lda.coef_
+            print(coef)
+
             str_features = '_'.join(combo)
             modelpath = os.path.join(self.temp_results, f'lda_model_{name}__{str_features}.pkl')
             dump(lda, modelpath)
@@ -272,25 +275,25 @@ class Analysis:
 
         # 1. model fat
         df_fat_read = self.read('00_data_fat_n603.csv')
-        df_fat = self.individual_model(df_fat_read, 'fat')
+        # df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
         df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
         df_hcv2 = self.read('00_data_hcv_n230.csv')
         df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        # df_hcv = self.individual_model(df_hcv_read, 'hcv')
 
         # 4. model hbv + hcv
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
-        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
+        # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
         df_fat_read['DSE'] = 1

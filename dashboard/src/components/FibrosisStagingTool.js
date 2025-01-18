@@ -21,7 +21,7 @@ const FibrosisStagingTool = () => {
           justifyContent: "center",
         }}
       >
-        <h2 className="left">Fibrosis Staging Tool</h2>
+        <h2 className="left">FIBMASTER</h2>
       </div>
 
       <div className="mt-4">
@@ -44,7 +44,11 @@ const FibrosisStagingTool = () => {
         </ul>
 
         <div className="tab-content mt-3">
-          <div className="tab-pane fade show active p-3" id="home">
+          <div
+            className="tab-pane fade show active p-3"
+            id="home"
+            style={{ maxWidth: "800px" }}
+          >
             <h3>Application Overview</h3>
             <p>
               Viral hepatitis (HBV and HCV) and non-alcoholic fatty liver
@@ -57,14 +61,46 @@ const FibrosisStagingTool = () => {
               levels, we can distinguish between different fibrosis groups,
               providing valuable information for diagnosis and treatment
               planning.
+              <img
+                className="fibpicture"
+                src="./fib.jpeg"
+                style={{
+                  marginTop: "50px",
+                  width: "80%",
+                  marginLeft: "10%",
+                  minWidth: "400px",
+                  marginBottom: "200px",
+                }}
+              />
             </p>
           </div>
           <div className="tab-pane fade" id="prediction">
             <Predictor />
+
+            <small style={{ margin: "50px" }}>
+              <p style={{ marginLeft: "20px" }}>
+                <b>Blood markers and acceptable values</b>
+              </p>
+              <ul>
+                <li>
+                  <b>AST:&nbsp;</b>Aspartate Aminotransferase enzyme (0 - 1000
+                  U/L)
+                </li>
+                <li>
+                  <b>ALT:&nbsp;</b>Alanine Aminotransferase enzyme (0 - 1000
+                  U/L)
+                </li>
+                <li>
+                  <b>PL:&nbsp;</b>Platelet count in plasma (0 - 1000 k/μL)
+                </li>
+                <li>
+                  <b>AGE:&nbsp;</b>Age (0 - 150 years)
+                </li>
+              </ul>
+            </small>
           </div>
           <div className="tab-pane fade m-4" id="about">
-            <h3>About</h3>
-            <p className="mt-3">Publication Link</p>
+            <p className="mt-3">Publication Link (Soon)</p>
             <p>
               Versioning at{" "}
               <a
