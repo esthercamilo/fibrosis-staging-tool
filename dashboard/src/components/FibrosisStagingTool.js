@@ -76,28 +76,6 @@ const FibrosisStagingTool = () => {
           </div>
           <div className="tab-pane fade" id="prediction">
             <Predictor />
-
-            <small style={{ margin: "50px" }}>
-              <p style={{ marginLeft: "20px" }}>
-                <b>Blood markers and acceptable values</b>
-              </p>
-              <ul>
-                <li>
-                  <b>AST:&nbsp;</b>Aspartate Aminotransferase enzyme (0 - 1000
-                  U/L)
-                </li>
-                <li>
-                  <b>ALT:&nbsp;</b>Alanine Aminotransferase enzyme (0 - 1000
-                  U/L)
-                </li>
-                <li>
-                  <b>PL:&nbsp;</b>Platelet count in plasma (0 - 1000 k/μL)
-                </li>
-                <li>
-                  <b>AGE:&nbsp;</b>Age (0 - 150 years)
-                </li>
-              </ul>
-            </small>
           </div>
           <div className="tab-pane fade m-4" id="about">
             <p className="mt-3">Publication Link (Soon)</p>

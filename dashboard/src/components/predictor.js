@@ -3,6 +3,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./predictor.css";
 import axios from "axios";
 import * as Yup from "yup";
+import DecisionTree from "./Tree";
+import * as d3 from "d3";
 
 const Predictor = () => {
   const [data, setData] = useState(null);
@@ -84,6 +86,9 @@ const Predictor = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // const decisionPath = ["Start", "Decision 1", "Yes", "End 1"];
+  const decisionPath = [];
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -129,7 +134,7 @@ const Predictor = () => {
               </div>
 
               <div>
-                <label>PL (k/miL):</label>
+                <label>PL (k/μL):</label>
                 <input
                   className="form-control"
                   type="number"
@@ -143,6 +148,28 @@ const Predictor = () => {
               <button className="btn btn-primary mt-3 mb-3" type="submit">
                 Enviar
               </button>
+
+              <small>
+                <p style={{ marginTop: "50px" }}>
+                  <b>Blood markers and acceptable values</b>
+                </p>
+                <ul>
+                  <li>
+                    <b>AST:&nbsp;</b>Aspartate Aminotransferase enzyme (0 - 1000
+                    U/L)
+                  </li>
+                  <li>
+                    <b>ALT:&nbsp;</b>Alanine Aminotransferase enzyme (0 - 1000
+                    U/L)
+                  </li>
+                  <li>
+                    <b>PL:&nbsp;</b>Platelet count in plasma (0 - 1000 k/μL)
+                  </li>
+                  <li>
+                    <b>AGE:&nbsp;</b>Age (0 - 150 years)
+                  </li>
+                </ul>
+              </small>
             </form>
           </div>
         </div>
@@ -157,6 +184,14 @@ const Predictor = () => {
               Predicted class: <b>{data["prediction"]}</b>
             </h4>
           )}
+
+          {data && <DecisionTree decisionPath={decisionPath} />}
+          <div>
+            <small>
+              <h5>Observations</h5>
+              <p>FIB4 result: x, confidence: y</p>
+            </small>
+          </div>
         </div>
       </div>
     </div>
