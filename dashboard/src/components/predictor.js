@@ -153,7 +153,7 @@ const Predictor = () => {
                 <p style={{ marginTop: "50px" }}>
                   <b>Blood markers and acceptable values</b>
                 </p>
-                <ul>
+                <ul style={{ marginLeft: "-50px" }}>
                   <li>
                     <b>AST:&nbsp;</b>Aspartate Aminotransferase enzyme (0 - 1000
                     U/L)
