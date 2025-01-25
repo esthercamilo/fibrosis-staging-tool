@@ -1,116 +1,177 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-const DecisionTree = ({ decisionPath }) => {
-  const svgRef = useRef(null); // Ref para o SVG
+const DecisionTreeVertical = ({ data }) => {
+  const svgRef = useRef();
 
   useEffect(() => {
-    const width = 800;
+    const width = 2000;
     const height = 600;
+    const margin = { top: 50, right: 50, bottom: 50, left: 50 };
 
-    // Dados da árvore de decisão (exemplo simples)
-    const treeData = {
-      name: "PL2 <= 16002",
+    const data = {
+      name: "Start",
+      condition: "PL² <= 16002.5",
       children: [
         {
-          name: "LDA1 <= -0.636",
-          children: [{ name: "G2" }],
+          name: "Node 1",
+          condition: "LDA2 < -0.946",
+          children: [
+            { name: "Node 1.1", condition: "G2" },
+            {
+              name: "Node 1.2",
+              condition: "ALT*AST<=11368 ",
+              children: [
+                {
+                  name: "Node 1.2.1",
+                  condition: "FIB4*sqrt<=1418",
+                  children: [
+                    { name: "Node 1.2.1.1", condition: "G1" },
+                    { name: "Node 1.2.1.2", condition: "G2" },
+                  ],
+                },
+                {
+                  name: "Node 1.2.2",
+                  condition: "PL*ALT<=7070.0",
+                  children: [
+                    { name: "Node 1.2.2.1", condition: "G1" },
+                    { name: "Node 1.2.2.2", condition: "G2" },
+                  ],
+                },
+              ],
+            },
+          ],
         },
         {
-          name: "G1",
+          name: "Node 2",
+          condition: "LDA1 <= -0.636",
+          children: [
+            {
+              name: "Node 2.1",
+              condition: "AST/AGE<13.347",
+              children: [
+                {
+                  name: "Node 2.1.1",
+                  condition: "AGE2 <= 2865",
+                },
+              ],
+            },
+            { name: "Node 2.2", condition: "PL<66.5" },
+          ],
         },
       ],
     };
 
-    // Criação do SVG para desenhar a árvore
     const svg = d3
       .select(svgRef.current)
       .attr("width", width)
       .attr("height", height);
 
-    // Estrutura hierárquica da árvore
-    const root = d3.hierarchy(treeData);
-    const treeLayout = d3.tree().size([width - 100, height - 100]);
+    const root = d3.hierarchy(data);
+
+    const treeLayout = d3
+      .tree()
+      .size([
+        width - margin.left - margin.right,
+        height - margin.top - margin.bottom,
+      ]);
     treeLayout(root);
 
-    // Criação das arestas (linhas)
-    svg
+    // Criação do grupo para a árvore
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Limpeza ao aplicar zoom
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.5, 3]) // Limita o nível de zoom
+      .on("zoom", function (event) {
+        g.attr("transform", event.transform); // Aplica a transformação (zoom e pan)
+      });
+
+    svg.call(zoom); // Aplica o zoom ao SVG
+
+    const initialTransform = d3.zoomIdentity.translate(0, 50).scale(0.4);
+    svg.call(zoom.transform, initialTransform);
+
+    // Desenha as arestas (linhas entre os nós)
+    const links = g
       .selectAll(".link")
       .data(root.links())
-      .join("line")
+      .enter()
+      .append("path")
       .attr("class", "link")
-      .attr("x1", (d) => d.source.x + 50)
-      .attr("y1", (d) => d.source.y + 50)
-      .attr("x2", (d) => d.target.x + 50)
-      .attr("y2", (d) => d.target.y + 50)
+      .attr(
+        "d",
+        d3
+          .linkVertical()
+          .x((d) => d.x)
+          .y((d) => d.y)
+      )
+      .attr("fill", "none")
       .attr("stroke", "#ccc")
       .attr("stroke-width", 2);
 
-    // Adiciona texto nas arestas.
-    svg
-      .selectAll(".link-text")
-      .data(root.links())
-      .join("text")
-      .attr("class", "link-text")
-      .attr("x", (d) => (d.source.y + d.target.y) / 2 + 200)
-      .attr("y", (d) => (d.source.x + d.target.x) / 2 - 100)
-      .attr("dy", "-0.5em")
-      .attr("text-anchor", "middle")
-      .text((d, i) => `Aresta ${i + 1}`) // Substitua com seus nomes específicos.
-      .attr("fill", "#666");
-
-    // Criação dos nós (círculos)
-    svg
+    // Desenha os nós
+    const nodes = g
       .selectAll(".node")
       .data(root.descendants())
-      .join("square")
+      .enter()
+      .append("g")
       .attr("class", "node")
-      .attr("cx", (d) => d.x + 50)
-      .attr("cy", (d) => d.y + 50)
-      .attr("r", 10)
-      .attr("fill", (d) =>
-        decisionPath.includes(d.data.name) ? "green" : "blue"
-      );
+      .attr("transform", (d) => `translate(${d.x},${d.y})`);
 
-    // Adicionando texto aos nós
-    svg
-      .selectAll(".node-text")
-      .data(root.descendants())
-      .join("text")
-      .attr("class", "node-text")
-      .attr("x", (d) => d.x + 50)
-      .attr("y", (d) => d.y + 35)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "#000")
-      .text((d) => d.data.name);
+    // Retângulos arredondados nos nós
+    nodes
+      .append("rect")
+      .attr("width", 120)
+      .attr("height", 50)
+      .attr("x", -60)
+      .attr("y", -25)
+      .attr("rx", 10)
+      .attr("ry", 10)
+      .attr("fill", "#fff")
+      .attr("stroke", "#007bff")
+      .attr("stroke-width", 2);
 
-    // Adicionando as decisões de forma mais clara
-    svg
-      .selectAll(".decision-text")
-      .data(root.descendants())
-      .join("text")
-      .attr("class", "decision-text")
-      .attr("x", (d) => d.x + 50)
-      .attr("y", (d) => d.y + 65)
+    // Texto dentro dos nós
+    nodes
+      .append("text")
+      .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
-      .attr("font-size", "10px")
-      .attr("fill", "#888")
-      .text((d) => {
-        // Exibindo a decisão associada ao nó
-        if (d.data.name === "Decision 1") return "Decision 1";
-        if (d.data.name === "Decision 2") return "Decision 2";
-        return "";
-      });
-  }, [decisionPath]);
+      .text((d) => d.data.condition);
+
+    // Adiciona rótulos nas arestas (True/False)
+    g.selectAll(".link-label")
+      .data(root.links())
+      .enter()
+      .append("text")
+      .attr("class", "link-label")
+      .attr("x", (d) => (d.source.x + d.target.x) / 2)
+      .attr("y", (d) => (d.source.y + d.target.y) / 2)
+      .attr("text-anchor", "middle")
+      .attr("dy", -5)
+      .text((d, i) => (i % 2 === 0 ? "True" : "False"));
+
+    // Remover o conteúdo da árvore e recriar ao renderizar novamente
+    return () => {
+      svg.selectAll("*").remove(); // Limpar a árvore antes de renderizar novamente
+    };
+  }, [data]);
 
   return (
-    <div className="row">
-      <div className="col">
-        <svg ref={svgRef}></svg>
-      </div>
+    <div
+      style={{
+        width: "100%",
+        height: "40%",
+        border: "1px solid #ccc",
+        overflow: "hidden",
+      }}
+    >
+      <svg ref={svgRef}></svg>
     </div>
   );
 };
 
-export default DecisionTree;
+export default DecisionTreeVertical;

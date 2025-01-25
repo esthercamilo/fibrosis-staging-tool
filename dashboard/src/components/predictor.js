@@ -185,13 +185,23 @@ const Predictor = () => {
             </h4>
           )}
 
-          {data && <DecisionTree decisionPath={decisionPath} />}
-          <div>
-            <small>
-              <h5>Observations</h5>
-              <p>FIB4 result: x, confidence: y</p>
-            </small>
-          </div>
+          {data && (
+            <>
+              <DecisionTree data={data} />
+              <div
+                style={{
+                  marginTop: "20px",
+                  border: "1px solid #ccc",
+                  padding: "20px",
+                }}
+              >
+                <small>
+                  <h5>Observations</h5>
+                  <p>FIB4 result: x, confidence: y</p>
+                </small>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

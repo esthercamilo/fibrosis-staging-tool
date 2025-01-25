@@ -63,7 +63,7 @@ const FibrosisStagingTool = () => {
               planning.
               <img
                 className="fibpicture"
-                src="./fib.jpeg"
+                src="/fib.jpeg"
                 style={{
                   marginTop: "50px",
                   width: "80%",
