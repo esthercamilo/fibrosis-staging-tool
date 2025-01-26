@@ -39,7 +39,6 @@ class Predict:
             df[combo] = score
         return df
 
-
     @staticmethod
     def define_highligts(tree, feature_names, feature_values, pathway):
 
@@ -73,7 +72,6 @@ class Predict:
 
         return recurse(0, feature_values)
 
-
     @staticmethod
     def tree_to_dict(tree, feature_names, feature_values):
 
@@ -88,6 +86,7 @@ class Predict:
 
                 # Adiciona a condição do nó
                 node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
+                node['title'] = feature
 
                 # Adiciona os filhos esquerdo e direito
                 node["children"] = [

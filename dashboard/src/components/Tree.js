@@ -71,7 +71,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`);
 
-    nodes.append("title").text((d) => d.data.name);
+    nodes.append("title").text((d) => d.data.title);
 
     // Retângulos arredondados nos nós
     nodes
