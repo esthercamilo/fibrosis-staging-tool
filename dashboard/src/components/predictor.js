@@ -86,8 +86,7 @@ const Predictor = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // const decisionPath = ["Start", "Decision 1", "Yes", "End 1"];
-  const decisionPath = [];
+  const highlightNodes = data["manual_tree"];
 
   return (
     <div className="container mt-4">
@@ -187,7 +186,7 @@ const Predictor = () => {
 
           {data && (
             <>
-              <DecisionTree data={data} />
+              <DecisionTree data={data} highlightNodes={highlightNodes} />
               <div
                 style={{
                   marginTop: "20px",

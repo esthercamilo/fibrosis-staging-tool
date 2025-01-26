@@ -6,6 +6,54 @@ import pandas
 from api.analysis.pipeline import Analysis
 
 
+def manual_decision_tree(df):
+    path = ["PL2"]
+    i = {k: v[0] for k, v in df.to_dict(orient='dict').items()}
+    if i['PL2'] <= 16002.5:
+        path.append('AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt')
+        if i['AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt'] <= -0.946:
+            path.append('G1a')
+        else:
+            path.append('ALT*AST')
+            if i['ALT*AST'] <= 11368:
+                path.append('FIB4sqrt')
+                if i['FIB4sqrt'] <= 1.418:
+                    path.append('G1a')
+                else:
+                    path.append('G2a')
+            else:
+                path.append('G2b')
+    else:
+        path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
+        if i['AGE_AST_FIB4_ASTsqrt_ALTsqrt'] <= -0.636:
+            path.append('PL')
+            if i['PL'] <= 166.5:
+                path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
+                if i['AGE_AST_FIB4_ASTsqrt_ALTsqrt'] <= -1.121:
+                    path.append('G1b')
+                else:
+                    path.append('G2b')
+            else:
+                path.append('FIB42')
+                if i['FIB42'] <= 10.235:
+                    path.append('G1c')
+                else:
+                    path.append('G2c')
+        else:
+            path.append('AST/AGE')
+            if i['AST/AGE'] <= 13.347:
+                path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
+                path.append('G1d')
+
+            else:
+                path.append('AGE2')
+                if i['AGE2'] <= 2862.5:
+                    path.append('G1d')
+                else:
+                    path.append('G2d')
+    return path
+
+
 class Predict:
     def __init__(self, root=None):
         if root:
@@ -75,6 +123,8 @@ class Predict:
         feature_names = list(model.feature_names_in_)
         inputs = inputs[feature_names]
 
+        mdt = manual_decision_tree(inputs)
+
         features = np.array(inputs).reshape(1, -1)
 
         # Fazer a previsão
@@ -85,7 +135,7 @@ class Predict:
         else:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
-        return {'prediction': prediction[0], 'confidence': probG}
+        return {'prediction': prediction[0], 'confidence': probG, 'manual_tree': mdt}
 
 
 if __name__ == '__main__':

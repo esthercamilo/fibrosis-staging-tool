@@ -47,7 +47,7 @@ const FibrosisStagingTool = () => {
           <div
             className="tab-pane fade show active p-3"
             id="home"
-            style={{ maxWidth: "800px" }}
+            style={{ maxWidth: "800px", margin: "auto", textAlign: "justify" }}
           >
             <h3>Application Overview</h3>
             <p>
