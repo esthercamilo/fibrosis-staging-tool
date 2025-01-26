@@ -2,56 +2,20 @@ import os
 import numpy as np
 import joblib
 import pandas
+from sklearn.tree import export_text
 
-from api.analysis.pipeline import Analysis
+
+def getnames(value):
+    dict_names = {'AGE_AST_FIB4_AGEsqrt_ASTsqrt_ALTsqrt': 'LDA1', 'AGE_AST_FIB4_ASTsqrt_ALTsqrt': 'LDA2',
+                  'AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt': 'LDA3'}
+    return dict_names.get(value, value)
 
 
-def manual_decision_tree(df):
-    path = ["PL2"]
-    i = {k: v[0] for k, v in df.to_dict(orient='dict').items()}
-    if i['PL2'] <= 16002.5:
-        path.append('AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt')
-        if i['AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt'] <= -0.946:
-            path.append('G1a')
-        else:
-            path.append('ALT*AST')
-            if i['ALT*AST'] <= 11368:
-                path.append('FIB4sqrt')
-                if i['FIB4sqrt'] <= 1.418:
-                    path.append('G1a')
-                else:
-                    path.append('G2a')
-            else:
-                path.append('G2b')
+def define_class(values):
+    if values[0][0] > values[0][1]:
+        return 'G1'
     else:
-        path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
-        if i['AGE_AST_FIB4_ASTsqrt_ALTsqrt'] <= -0.636:
-            path.append('PL')
-            if i['PL'] <= 166.5:
-                path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
-                if i['AGE_AST_FIB4_ASTsqrt_ALTsqrt'] <= -1.121:
-                    path.append('G1b')
-                else:
-                    path.append('G2b')
-            else:
-                path.append('FIB42')
-                if i['FIB42'] <= 10.235:
-                    path.append('G1c')
-                else:
-                    path.append('G2c')
-        else:
-            path.append('AST/AGE')
-            if i['AST/AGE'] <= 13.347:
-                path.append('AGE_AST_FIB4_ASTsqrt_ALTsqrt')
-                path.append('G1d')
-
-            else:
-                path.append('AGE2')
-                if i['AGE2'] <= 2862.5:
-                    path.append('G1d')
-                else:
-                    path.append('G2d')
-    return path
+        return 'G2'
 
 
 class Predict:
@@ -75,14 +39,79 @@ class Predict:
             df[combo] = score
         return df
 
+
+    @staticmethod
+    def define_highligts(tree, feature_names, feature_values, pathway):
+
+        def recurse(node_id, fv):
+            # Inicializa o nó
+            node = {"name": f"Node {node_id}"}
+            pathway.append(f"Node {node_id}")
+            # Verifica se é um nó interno
+            if tree.feature[node_id] != -2:  # Nó interno
+                feature = feature_names[tree.feature[node_id]]
+                threshold = tree.threshold[node_id]
+
+                # Adiciona a condição do nó
+                node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
+
+                actual_value = fv[feature].iloc[0]
+                if actual_value <= threshold:
+                    # Adiciona os filhos esquerdo e direito
+                    node["children"] = [
+                        recurse(tree.children_left[node_id], fv)
+                    ]
+                else:
+                    node["children"] = [
+                        recurse(tree.children_right[node_id], fv)
+                    ]
+            else:  # Nó folha
+                # Adiciona os valores no nó folha
+                node["condition"] = define_class(tree.value[node_id].tolist())
+                pathway.append(f"Node {node_id}")
+            return node
+
+        return recurse(0, feature_values)
+
+
+    @staticmethod
+    def tree_to_dict(tree, feature_names, feature_values):
+
+        def recurse(node_id, fv):
+            # Inicializa o nó
+            node = {"name": f"Node {node_id}"}
+
+            # Verifica se é um nó interno
+            if tree.feature[node_id] != -2:  # Nó interno
+                feature = feature_names[tree.feature[node_id]]
+                threshold = tree.threshold[node_id]
+
+                # Adiciona a condição do nó
+                node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
+
+                # Adiciona os filhos esquerdo e direito
+                node["children"] = [
+                    recurse(tree.children_left[node_id], fv),
+                    recurse(tree.children_right[node_id], fv)
+                ]
+            else:  # Nó folha
+                # Adiciona os valores no nó folha
+                node["condition"] = define_class(tree.value[node_id].tolist())
+
+            return node
+
+        return recurse(0, feature_values)
+
+    @staticmethod
+    def fib4(df):
+        return (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
+
     def calculate(self, df):
 
-        df['FIB4'] = (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
-
-        # list_sorted = Analysis().fields_order()
+        df['FIB4'] = self.fib4(df)
 
         result = {
-            'FIB4': (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST'])),
+            'FIB4': self.fib4,
             'AGE2': df['AGE'] ** 2,
             'AGEsqrt': np.sqrt(df['AGE']),
             'AST': df['AST'] ** 2,
@@ -116,14 +145,22 @@ class Predict:
     def run(self, data: dict):
 
         modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1_global.pkl')
+
         model = joblib.load(modelpath)
 
         # Porém o usuário só entra com AGE,AST,ALT,PL. Todos os outros são calculados internamente
         inputs = self.calculate(data)
+        fib4 = self.fib4(data)
         feature_names = list(model.feature_names_in_)
         inputs = inputs[feature_names]
 
-        mdt = manual_decision_tree(inputs)
+        feature_names_ = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else [f'feature_{i}' for i in
+                                                                                              range(
+                                                                                                  model.tree_.n_features)]
+
+        pathway = []
+        tree_dict = self.tree_to_dict(model.tree_, feature_names_, inputs)
+        self.define_highligts(model.tree_, feature_names_, inputs, pathway)
 
         features = np.array(inputs).reshape(1, -1)
 
@@ -135,7 +172,11 @@ class Predict:
         else:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
-        return {'prediction': prediction[0], 'confidence': probG, 'manual_tree': mdt}
+        data = {'prediction': prediction[0], 'confidence': probG, 'd3tree': tree_dict,
+                'values': [{"field": k, "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
+                'fib4': float(round(fib4, 2)), 'highlights': pathway}
+        print(data)
+        return data
 
 
 if __name__ == '__main__':

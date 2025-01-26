@@ -86,8 +86,6 @@ const Predictor = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const highlightNodes = data["manual_tree"];
-
   return (
     <div className="container mt-4">
       <div className="row">
@@ -170,6 +168,23 @@ const Predictor = () => {
                 </ul>
               </small>
             </form>
+            {/* <div
+              style={{
+                marginTop: "50px",
+                marginLeft: "0px",
+                width: "200px",
+              }}
+            >
+              <p>
+                <b>Try actual patient data</b>
+              </p>
+              <button className="btn btn-light" onCl>
+                Patient 1 - G1
+              </button>
+              <button className="btn btn-light">Patient 2 - G2</button>
+              <button className="btn btn-light">Patient 3 - G1</button>
+              <button className="btn btn-light">Patient 4 - G2</button>
+            </div> */}
           </div>
         </div>
         <div className="col-9 ">
@@ -186,17 +201,30 @@ const Predictor = () => {
 
           {data && (
             <>
-              <DecisionTree data={data} highlightNodes={highlightNodes} />
+              <DecisionTree
+                fulldata={data}
+                highlightNodes={data["highlights"]}
+              />
               <div
                 style={{
                   marginTop: "20px",
                   border: "1px solid #ccc",
                   padding: "20px",
+                  maxHeight: "200px",
+                  overflowY: "auto",
                 }}
               >
                 <small>
-                  <h5>Observations</h5>
-                  <p>FIB4 result: x, confidence: y</p>
+                  <h5>Calculated values for this patient</h5>
+                  {data["values"].map((item) => (
+                    <p>
+                      {item.field}: {item.value}
+                    </p>
+                  ))}
+                </small>
+                <small>
+                  <h5>Predictions from FIB4</h5>
+                  <p>score: {data.fib4}</p>
                 </small>
               </div>
             </>

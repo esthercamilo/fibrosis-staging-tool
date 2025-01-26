@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-const DecisionTreeVertical = ({ data, highlightNodes = [] }) => {
+const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
   const svgRef = useRef();
 
   useEffect(() => {
@@ -9,90 +9,7 @@ const DecisionTreeVertical = ({ data, highlightNodes = [] }) => {
     const height = 700;
     const margin = { top: 50, right: 50, bottom: 50, left: 50 };
 
-    const data = {
-      name: "PL2",
-      condition: "PL² <= 16002.5",
-      children: [
-        {
-          name: "AGE_AST_FIB4_ASTsqrt_ALT2_ALTsqrt",
-          condition: "LDA1 < -0.946",
-          children: [
-            {
-              name: "FIB42",
-              condition: "FIB4²<=1.418",
-              children: [
-                { name: "G1a", condition: "G1" },
-                { name: "G2a", condition: "G2" },
-              ],
-            },
-            {
-              name: "ALT*AST",
-              condition: "ALT*AST<=11368 ",
-              children: [
-                {
-                  name: "FIB4sqrt",
-                  condition: "FIB4sqrt<=1418",
-                  children: [
-                    { name: "G1b", condition: "G1" },
-                    { name: "G2b", condition: "G2" },
-                  ],
-                },
-                {
-                  name: "G2c",
-                  condition: "G2",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          name: "AGE_AST_FIB4_ASTsqrt_ALTsqrt",
-          condition: "LDA2 <= -0.636",
-          children: [
-            {
-              name: "AST/AGE",
-              condition: "AST/AGE<13.347",
-              children: [
-                {
-                  name: "AGE2",
-                  condition: "AGE² <= 2862.5",
-                  children: [
-                    { name: "G1d", condition: "G1" },
-                    { name: "G2d", condition: "G2" },
-                  ],
-                },
-                {
-                  name: "G1e",
-                  condition: "G1",
-                },
-              ],
-            },
-            {
-              name: "PL",
-              condition: "PL<=166.5",
-              children: [
-                {
-                  name: "FIB42",
-                  condition: "FIB4²<=10.235",
-                  children: [
-                    { name: "G1f", condition: "G1" },
-                    { name: "G2f", condition: "G2" },
-                  ],
-                },
-                {
-                  name: "AGE_AST_FIB4_ASTsqrt_ALTsqrt",
-                  condition: "LDA <= -1.121",
-                  children: [
-                    { name: "G1g", condition: "G1" },
-                    { name: "G2g", condition: "G2" },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
+    const data = fulldata.d3tree;
 
     const svg = d3
       .select(svgRef.current)
@@ -154,6 +71,8 @@ const DecisionTreeVertical = ({ data, highlightNodes = [] }) => {
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x},${d.y})`);
 
+    nodes.append("title").text((d) => d.data.name);
+
     // Retângulos arredondados nos nós
     nodes
       .append("rect")
@@ -194,7 +113,7 @@ const DecisionTreeVertical = ({ data, highlightNodes = [] }) => {
     return () => {
       svg.selectAll("*").remove(); // Limpar a árvore antes de renderizar novamente
     };
-  }, [data, highlightNodes]);
+  }, [fulldata, highlightNodes]);
 
   return (
     <div
@@ -210,4 +129,4 @@ const DecisionTreeVertical = ({ data, highlightNodes = [] }) => {
   );
 };
 
-export default DecisionTreeVertical;
+export default DecisionTree;
