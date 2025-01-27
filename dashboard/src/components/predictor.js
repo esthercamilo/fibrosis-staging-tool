@@ -67,7 +67,7 @@ const Predictor = () => {
         // Make the axios POST request
         const { age, ast, alt, pl } = formData;
         const response = await axios.post(
-          `https://bioinformatica.fca.unesp.br/fibrosis-staging-tool/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
+          `http://200.145.145.33:8000/api/fibrosis-staging-tool/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
         );
         // Handle the response
         setData(response.data.response);
