@@ -21,7 +21,7 @@ const FibrosisStagingTool = () => {
           justifyContent: "center",
         }}
       >
-        <h2 className="left">FIBMASTER</h2>
+        <img src="/fib.png" alt="FIB" style={{ height: "100px" }} />
       </div>
 
       <div className="mt-4">

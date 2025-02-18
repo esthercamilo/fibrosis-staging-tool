@@ -107,7 +107,7 @@ const Predictor = () => {
               </div>
 
               <div>
-                <label>AST (U/L):</label>
+                <label>AST or TGO (U/L):</label>
                 <input
                   className="form-control"
                   type="number"
@@ -119,7 +119,7 @@ const Predictor = () => {
               </div>
 
               <div>
-                <label>ALT (U/L):</label>
+                <label>ALT or TGP (U/L):</label>
                 <input
                   className="form-control"
                   type="number"

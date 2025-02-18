@@ -50,7 +50,7 @@ const Home = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                FibMaster
+                Fib+
               </a>
               - Nova versão do preditor do nível de gravidade da fibrose
               hepática com base em marcadores molecures.
