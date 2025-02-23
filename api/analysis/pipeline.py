@@ -44,6 +44,11 @@ class Analysis:
         df = pd.read_csv(os.path.join(datapath, f), sep='\t')
         return df
 
+    @staticmethod
+    def generate_combinations(features, min_size=2, max_size=5):
+        for i in range(min_size, min(max_size, len(features)) + 1):
+            yield from combinations(features, i)
+
     def lda(self, df, name):
         """Discriminant function (DF) definition"""
 
@@ -53,15 +58,17 @@ class Analysis:
 
         # Todas as combinações possíveis
         exclude = ['GROUP', 'DSE']
-        features = [x for x in df.columns if x not in exclude][0:10]
-        combinations_features = sum([list(combinations(features, i)) for i in range(1, len(features) + 1)], [])
+        features = [x for x in df.columns if x not in exclude]
 
         results = []
 
-        for combo in combinations_features:
+        f = open(os.path.join(self.root, 'api', 'analysis', 'results', f'features_{name}.csv'), 'w')
+
+        for combo in self.generate_combinations(features):
 
             if len(combo) > 6 or len(combo) <= 1:
                 continue
+            f.write(str(combo) + '\n')
             undersampler = RandomUnderSampler(random_state=42)
             X = df[list(combo)]
 
@@ -72,9 +79,6 @@ class Analysis:
             # LDA
             lda = LinearDiscriminantAnalysis()
             lda.fit(X_train, y_train)
-
-            coef = lda.coef_
-            print(coef)
 
             str_features = '_'.join(combo)
             modelpath = os.path.join(self.temp_results, f'lda_model_{name}__{str_features}.pkl')
@@ -107,6 +111,7 @@ class Analysis:
             source_file = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{name}__{sr[4]}.pkl')
             target_file = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_model_{name}__{sr[4]}.pkl')
             shutil.move(source_file, target_file)
+        f.close()
 
         fulldata_lda = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_traingdata_{name}.csv')
         df.to_csv(fulldata_lda)
@@ -130,7 +135,7 @@ class Analysis:
         # 3
         df['AGEsqrt'] = np.sqrt(df['AGE'])
         # 4
-        df['AST'] = df['AST'] ** 2
+        df['AST2'] = df['AST'] ** 2
         # 5
         df['ASTsqrt'] = np.sqrt(df['AST'])
         # 6
@@ -146,13 +151,13 @@ class Analysis:
         # 11
         df['FIB4sqrt'] = np.sqrt(df['FIB4'])
         # 12
-        df['AST/ALT'] = df['AST'] / df['ALT']
+        df['AST--ALT'] = df['AST'] / df['ALT']
         # 13
-        df['AST/AGE'] = df['AST'] / df['AGE']
+        df['AST--AGE'] = df['AST'] / df['AGE']
         # 14
-        df['ALT/AGE'] = df['ALT'] / df['AGE']
+        df['ALT--AGE'] = df['ALT'] / df['AGE']
         # 15
-        df['PL/AGE'] = df['PL'] / df['AGE']
+        df['PL--AGE'] = df['PL'] / df['AGE']
         # 16
         df['PL*ALT'] = df['PL'] * df['ALT']
         # 17
@@ -266,7 +271,7 @@ class Analysis:
     def individual_model(self, df, name):
         df = df.drop('FIB4', axis=1, errors="ignore")
         df = self.attributes(df)
-        df = self.lda(df, name)
+        # df = self.lda(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
@@ -274,28 +279,33 @@ class Analysis:
     def run(self):
 
         # 1. model fat
+        print('iniciando FAT')
         df_fat_read = self.read('00_data_fat_n603.csv')
         # df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
+        print('iniciando HBV')
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
         # df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
-        df_hcv1 = self.read('00_data_hcv_n74_proprio.csv')
+        print('iniciando HCV')
+        df_hcv1 = self.read('00_data_hcv_n73_proprio.csv')
         df_hcv2 = self.read('00_data_hcv_n230.csv')
         df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        # df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        df_hcv = self.individual_model(df_hcv_read, 'hcv')
 
         # 4. model hbv + hcv
+        print('iniciando HBV + HCV')
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
         # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
+        print('iniciando Global')
         df_fat_read['DSE'] = 1
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
