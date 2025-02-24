@@ -281,14 +281,14 @@ class Analysis:
         # 1. model fat
         print('iniciando FAT')
         df_fat_read = self.read('00_data_fat_n603.csv')
-        # df_fat = self.individual_model(df_fat_read, 'fat')
+        df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
         print('iniciando HBV')
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
         print('iniciando HCV')
