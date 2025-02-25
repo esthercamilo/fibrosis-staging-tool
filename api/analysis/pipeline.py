@@ -302,7 +302,7 @@ class Analysis:
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
-        # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
+        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
         print('iniciando Global')
