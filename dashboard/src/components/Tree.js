@@ -76,9 +76,9 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
     // Retângulos arredondados nos nós
     nodes
       .append("rect")
-      .attr("width", 100)
+      .attr("width", 120)
       .attr("height", 50)
-      .attr("x", -50)
+      .attr("x", -60)
       .attr("y", -25)
       .attr("rx", 10)
       .attr("ry", 10)

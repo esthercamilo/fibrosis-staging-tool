@@ -88,11 +88,15 @@ class Predict:
                 node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
                 node['title'] = feature
 
+                left_child = recurse(tree.children_left[node_id], fv)
+                right_child = recurse(tree.children_right[node_id], fv)
+
+                if left_child["condition"] == right_child["condition"]:
+                    return left_child  # Mantém apenas um deles
+
                 # Adiciona os filhos esquerdo e direito
-                node["children"] = [
-                    recurse(tree.children_left[node_id], fv),
-                    recurse(tree.children_right[node_id], fv)
-                ]
+                node["children"] = [left_child, right_child]
+
             else:  # Nó folha
                 # Adiciona os valores no nó folha
                 node["condition"] = define_class(tree.value[node_id].tolist())
@@ -138,12 +142,11 @@ class Predict:
         # sorted_result = {k: [v] for k, v in dict(zip(list_sorted, [result[x] for x in list_sorted])).items()}
         partial_df = pandas.DataFrame({k: [v] for k, v in result.items()})
         # LDA data
-        full_df = self.lda_load(partial_df)
-        return full_df
+        # full_df = self.lda_load(partial_df)
+        return partial_df
 
     def run(self, data: dict):
-
-        modelpath = os.path.join(self.root, 'api', 'analysis', 'results', 'model1_global.pkl')
+        modelpath = os.path.join(self.root, 'api', 'analysis', 'without_lda', 'results', 'model1_global.pkl')
 
         model = joblib.load(modelpath)
 
