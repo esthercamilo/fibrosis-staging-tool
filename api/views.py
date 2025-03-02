@@ -17,13 +17,16 @@ from core.settings import BASE_DIR
                                         openapi.Parameter(name="PL", in_=openapi.IN_QUERY, description="PL",
                                                           type=openapi.TYPE_NUMBER)])
 @api_view(['POST'])
-def prediction_view(request):
+def prediction_view(request, model):
     """
-    Prediction of the Fibrosis severity from Molecular Markers
+    Prediction of the Fibrosis severity from Molecular Markers\n
+    `model`can be "hcv", "hbv", "hbcv", "fat" or "global"\n
+    `lda` (boolean parameter): true if model includes LDA attributes
     """
     try:
+        lda = request.query_params.get('lda')
         data = {k: float(v[0]) for k, v in dict(request.query_params).items()}
-        prediction = Predict(root=BASE_DIR).run(data)
+        prediction = Predict(root=BASE_DIR).run(data, model, lda)
         return JsonResponse({"response": prediction}, status=status.HTTP_200_OK)
     except Exception as e:
         return JsonResponse({"response": 'Fail to predict. Verify if you filled all data correctly. Details: ' + str(e)},

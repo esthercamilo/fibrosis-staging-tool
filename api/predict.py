@@ -73,7 +73,19 @@ class Predict:
         return recurse(0, feature_values)
 
     @staticmethod
-    def tree_to_dict(tree, feature_names, feature_values):
+    def replace_names(value):
+        if 'sqrt' in value:
+            return f"\u221A{value}".replace('sqrt', '')
+        if '-1' in value:
+            return f"1/{value}".replace('-1', '')
+        if '-2' in value:
+            return f"1/{value}^2".replace('-2', '')
+        if '--' in value:
+            return value.replace('--', '/')
+        else:
+            return value
+
+    def tree_to_dict(self, tree, feature_names, feature_values):
 
         def recurse(node_id, fv):
             # Inicializa o nó
@@ -85,8 +97,15 @@ class Predict:
                 threshold = tree.threshold[node_id]
 
                 # Adiciona a condição do nó
-                node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
-                node['title'] = feature
+                if threshold > 10:
+                    th = f"{threshold:.0f}"
+                elif 10 >= threshold > 0:
+                    th = f"{threshold:.1f}"
+                else:
+                    th = f"{threshold:.2f}"
+
+                node["condition"] = f"{getnames(feature)} <= {th}"
+                node['title'] = self.replace_names(feature)
 
                 left_child = recurse(tree.children_left[node_id], fv)
                 right_child = recurse(tree.children_right[node_id], fv)
@@ -145,8 +164,13 @@ class Predict:
         # full_df = self.lda_load(partial_df)
         return partial_df
 
-    def run(self, data: dict):
-        modelpath = os.path.join(self.root, 'api', 'analysis', 'without_lda', 'results', 'model1_global.pkl')
+    def run(self, data: dict, model: str, lda=False):
+
+        root_model_path = os.path.join(self.root, 'api', 'analysis', 'without_lda', 'results')
+        if lda:
+            root_model_path = os.path.join(self.root, 'api', 'analysis', 'including_lda', 'results')
+
+        modelpath = os.path.join(root_model_path, f'model1_{model}.pkl')
 
         model = joblib.load(modelpath)
 
@@ -156,9 +180,8 @@ class Predict:
         feature_names = list(model.feature_names_in_)
         inputs = inputs[feature_names]
 
-        feature_names_ = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else [f'feature_{i}' for i in
-                                                                                              range(
-                                                                                                  model.tree_.n_features)]
+        feature_names_ = model.feature_names_in_ if hasattr(model, 'feature_names_in_') \
+            else [f'feature_{i}' for i in range(model.tree_.n_features)]
 
         pathway = []
         tree_dict = self.tree_to_dict(model.tree_, feature_names_, inputs)
@@ -175,7 +198,7 @@ class Predict:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
         data = {'prediction': prediction[0], 'confidence': probG, 'd3tree': tree_dict,
-                'values': [{"field": k, "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
+                'values': [{"field": self.replace_names(k), "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
                 'fib4': float(round(fib4, 2)), 'highlights': pathway}
         print(data)
         return data

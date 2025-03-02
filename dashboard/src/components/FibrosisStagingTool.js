@@ -27,12 +27,16 @@ const FibrosisStagingTool = () => {
       <div className="mt-4">
         <ul className="nav nav-tabs">
           <li className="nav-item">
-            <a className="nav-link active" href="#home" data-bs-toggle="tab">
+            <a className="nav-link" href="#home" data-bs-toggle="tab">
               Home
             </a>
           </li>
           <li className="nav-item">
-            <a className="nav-link" href="#prediction" data-bs-toggle="tab">
+            <a
+              className="nav-link active"
+              href="#prediction"
+              data-bs-toggle="tab"
+            >
               Prediction
             </a>
           </li>
@@ -45,7 +49,7 @@ const FibrosisStagingTool = () => {
 
         <div className="tab-content mt-3">
           <div
-            className="tab-pane fade show active p-3"
+            className="tab-pane fade"
             id="home"
             style={{ maxWidth: "800px", margin: "auto", textAlign: "justify" }}
           >
@@ -74,7 +78,7 @@ const FibrosisStagingTool = () => {
               />
             </p>
           </div>
-          <div className="tab-pane fade" id="prediction">
+          <div className="tab-pane fade show active" id="prediction">
             <Predictor />
           </div>
           <div className="tab-pane fade m-4" id="about">

@@ -4,13 +4,14 @@ import "./predictor.css";
 import axios from "axios";
 import * as Yup from "yup";
 import DecisionTree from "./Tree";
-import * as d3 from "d3";
 
 const Predictor = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [responseData, setResponseData] = useState(null);
+  const [selectedValue, setSelectedValue] = useState("Global");
+  const options = ["HBV", "HCV", "HBV and HCV", "NAFLD", "Global"];
 
   const [formData, setFormData] = useState({
     age: "",
@@ -67,7 +68,7 @@ const Predictor = () => {
         // Make the axios POST request
         const { age, ast, alt, pl } = formData;
         const response = await axios.post(
-          `http://0.0.0.0:8000/api/predict/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
+          `http://0.0.0.0:8000/api/predict/${selectedValue.toLowerCase()}/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
         );
         // Handle the response
         setData(response.data.response);
@@ -87,11 +88,13 @@ const Predictor = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <div className="row">
         <div className="col-3">
           <div>
-            <h5>Enter Your Test Results</h5>
+            <b>
+              <p>Enter Your Test Results</p>
+            </b>
 
             <form onSubmit={handleSubmit}>
               <div>
@@ -168,26 +171,33 @@ const Predictor = () => {
                 </ul>
               </small>
             </form>
-            {/* <div
-              style={{
-                marginTop: "50px",
-                marginLeft: "0px",
-                width: "200px",
-              }}
-            >
-              <p>
-                <b>Try actual patient data</b>
-              </p>
-              <button className="btn btn-light" onCl>
-                Patient 1 - G1
-              </button>
-              <button className="btn btn-light">Patient 2 - G2</button>
-              <button className="btn btn-light">Patient 3 - G1</button>
-              <button className="btn btn-light">Patient 4 - G2</button>
-            </div> */}
           </div>
         </div>
         <div className="col-9 ">
+          <div class="settings">
+            <div className="row">
+              <div className="col-6">
+                <div className="mb-3">
+                  <label htmlFor="settingsSelect" className="form-label">
+                    <b>Select the model:</b>
+                  </label>
+                  <select
+                    id="settingsSelect"
+                    className="form-select"
+                    value={selectedValue}
+                    onChange={(e) => setSelectedValue(e.target.value)}
+                  >
+                    {options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {data && (
             <h4
               className={`alert ${

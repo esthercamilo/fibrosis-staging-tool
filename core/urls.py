@@ -28,7 +28,7 @@ create_media_directory()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/predict/', prediction_view, name='prediction_view'),
+    path('api/predict/<model>/', prediction_view, name='prediction_view'),
     path('api/health-check/', healthcheck, name='healthcheck'),
     path('api-auth/', include('rest_framework.urls'), name='rest_framework_transaction'),
     path('api/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
