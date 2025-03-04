@@ -18,29 +18,33 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
 
     const root = d3.hierarchy(data);
 
-    const clusterLayout = d3
-      .cluster()
+    const treeLayout = d3
+      .tree()
       .size([
         width - margin.left - margin.right,
         height - margin.top - margin.bottom,
       ]);
-    clusterLayout(root);
+    treeLayout(root);
 
+    // Criação do grupo para a árvore
     const g = svg
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    // Limpeza ao aplicar zoom
     const zoom = d3
       .zoom()
-      .scaleExtent([0.5, 3])
+      .scaleExtent([0.5, 3]) // Limita o nível de zoom
       .on("zoom", function (event) {
-        g.attr("transform", event.transform);
+        g.attr("transform", event.transform); // Aplica a transformação (zoom e pan)
       });
 
-    svg.call(zoom);
+    svg.call(zoom); // Aplica o zoom ao SVG
+
     const initialTransform = d3.zoomIdentity.translate(0, 50).scale(1);
     svg.call(zoom.transform, initialTransform);
 
+    // Desenha as arestas (linhas entre os nós)
     const links = g
       .selectAll(".link")
       .data(root.links())
@@ -58,6 +62,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("stroke", "#ccc")
       .attr("stroke-width", 2);
 
+    // Desenha os nós
     const nodes = g
       .selectAll(".node")
       .data(root.descendants())
@@ -68,11 +73,12 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
 
     nodes.append("title").text((d) => d.data.title);
 
+    // Retângulos arredondados nos nós
     nodes
       .append("rect")
-      .attr("width", (d) => (d.children ? 120 : 60)) // Folhas com metade da largura
+      .attr("width", 120)
       .attr("height", 50)
-      .attr("x", (d) => (d.children ? -60 : -30)) // Ajuste para centralizar
+      .attr("x", -60)
       .attr("y", -25)
       .attr("rx", 10)
       .attr("ry", 10)
@@ -82,6 +88,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("stroke", "#007bff")
       .attr("stroke-width", 2);
 
+    // Texto dentro dos nós
     nodes
       .append("text")
       .attr("dy", "0.35em")
@@ -89,6 +96,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("font-size", "12px")
       .text((d) => d.data.condition);
 
+    // Adiciona rótulos nas arestas (True/False)
     g.selectAll(".link-label")
       .data(root.links())
       .enter()
@@ -101,12 +109,9 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("dy", -5)
       .text((d, i) => (i % 2 === 0 ? "True" : "False"));
 
-    root.descendants().forEach((d, i) => {
-      d.x += i % 2 === 0 ? 10 : -10;
-    });
-
+    // Remover o conteúdo da árvore e recriar ao renderizar novamente
     return () => {
-      svg.selectAll("*").remove();
+      svg.selectAll("*").remove(); // Limpar a árvore antes de renderizar novamente
     };
   }, [fulldata, highlightNodes]);
 

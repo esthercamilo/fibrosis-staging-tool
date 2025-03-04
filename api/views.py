@@ -25,7 +25,8 @@ def prediction_view(request, model):
     """
     try:
         lda = request.query_params.get('lda')
-        data = {k: float(v[0]) for k, v in dict(request.query_params).items()}
+        data = {k: float(v[0]) for k, v in dict(request.query_params).items() if k != 'lda'}
+        model = model.replace('nafld', 'fat')
         prediction = Predict(root=BASE_DIR).run(data, model, lda)
         return JsonResponse({"response": prediction}, status=status.HTTP_200_OK)
     except Exception as e:

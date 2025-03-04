@@ -73,10 +73,21 @@ const FibrosisStagingTool = () => {
                   width: "80%",
                   marginLeft: "10%",
                   minWidth: "400px",
-                  marginBottom: "200px",
+                  marginBottom: "50px",
                 }}
               />
             </p>
+            <h5>General model performance</h5>
+            <img
+              className="performance"
+              src="/performance.png"
+              style={{
+                marginTop: "50px",
+                width: "100%",
+                minWidth: "400px",
+                marginBottom: "200px",
+              }}
+            />
           </div>
           <div className="tab-pane fade show active" id="prediction">
             <Predictor />
@@ -96,6 +107,17 @@ const FibrosisStagingTool = () => {
             <p>Contact: rafael.simoes@unesp.br</p>
           </div>
         </div>
+
+        <small className="d-block text-end m-5">
+          <a
+            href="https://motivaservicos.com.br"
+            className="text-decoration-none"
+            style={{ color: "#D3D3D3" }}
+            target="_blank"
+          >
+            made by Motiva Serviços 2025
+          </a>
+        </small>
       </div>
     </div>
   );

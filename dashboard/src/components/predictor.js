@@ -1,246 +1,154 @@
-import React, { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "./predictor.css";
-import axios from "axios";
-import * as Yup from "yup";
+import React, { useEffect, useState } from "react";
 import DecisionTree from "./Tree";
+import axios from "axios";
 
 const Predictor = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [responseData, setResponseData] = useState(null);
-  const [selectedValue, setSelectedValue] = useState("Global");
-  const options = ["HBV", "HCV", "HBV and HCV", "NAFLD", "Global"];
-
-  const [formData, setFormData] = useState({
-    age: "",
-    ast: "",
-    alt: "",
-    pl: "",
+  const [inputs, setInputs] = useState({
+    AGE: "",
+    PL: "",
+    "AST or TGO (U/L)": "",
+    "ALT or TGP (U/L)": "",
   });
+  const [model, setModel] = useState("global");
+  const [data, setData] = useState(false);
+  const [useLDA, setUseLDA] = useState(false);
+  const options = ["Global", "HBV", "HCV", "NAFLD"];
 
-  const [errors, setErrors] = useState({});
+  const patientData = {
+    G1: { AGE: 45, PL: 150, "AST or TGO (U/L)": 35, "ALT or TGP (U/L)": 40 },
+    G2: { AGE: 60, PL: 200, "AST or TGO (U/L)": 50, "ALT or TGP (U/L)": 60 },
+  };
 
-  const validationSchema = Yup.object({
-    age: Yup.number()
-      .required("Age is required")
-      .integer("Age must be an integer")
-      .positive("Age must be positive")
-      .max(150, "Age cannot be greater than 150"),
-    ast: Yup.number()
-      .required("AST value is required")
-      .integer("AST must be an integer")
-      .positive("AST must be positive")
-      .max(1000, "AST cannot be greater than 1000"),
-    alt: Yup.number()
-      .required("ALT value is required")
-      .integer("ALT must be an integer")
-      .positive("ALT must be positive")
-      .max(1000, "ALT cannot be greater than 1000"),
-    pl: Yup.number()
-      .required("PL value is required")
-      .integer("PL must be an integer")
-      .positive("PL must be positive")
-      .max(1000, "PL cannot be greater than 1000"),
-  });
+  const setPatientValues = (g) => {
+    setInputs(patientData[g]);
+  };
 
-  const validate = async () => {
-    try {
-      await validationSchema.validate(formData, { abortEarly: false });
-      setErrors({});
-      return true;
-    } catch (err) {
-      const newErrors = {};
-      err.inner.forEach((error) => {
-        newErrors[error.path] = error.message;
-      });
-      setErrors(newErrors);
-    }
+  const handleChange = (e) => {
+    setInputs({ ...inputs, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isValid = await validate();
-    if (isValid) {
-      setLoading(true); // Set loading state to true before making the request
-      try {
-        // Make the axios POST request
-        const { age, ast, alt, pl } = formData;
-        const response = await axios.post(
-          `http://0.0.0.0:8000/api/predict/${selectedValue.toLowerCase()}/?AGE=${age}&AST=${ast}&ALT=${alt}&PL=${pl}`
-        );
-        // Handle the response
-        setData(response.data.response);
-        console.log(`Atualizando dados`);
-      } catch (error) {
-        console.error("Error submitting data:", error);
-        alert("There was an error submitting the form.");
-      } finally {
-        setLoading(false); // Set loading state back to false
+
+    try {
+      let url = `http://0.0.0.0:8000/api/predict/${model.toLowerCase()}/?AGE=${
+        inputs["AGE"]
+      }&AST=${inputs["AST or TGO (U/L)"]}&ALT=${
+        inputs["ALT or TGP (U/L)"]
+      }&PL=${inputs["PL"]}`;
+      if (useLDA) {
+        url = `${url}&lda=true`;
       }
+      console.log(url);
+      const response = await axios.post(url);
+      setData(response.data.response);
+      console.log(`Atualizando dados`);
+    } catch (error) {
+      console.error("Error submitting data:", error);
+      alert("There was an error submitting the form.");
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
   return (
-    <div className="container">
-      <div className="row">
-        <div className="col-3">
-          <div>
-            <b>
-              <p>Enter Your Test Results</p>
-            </b>
-
-            <form onSubmit={handleSubmit}>
-              <div>
-                <label>Age (years):</label>
-                <input
-                  className="form-control"
-                  type="number"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleChange}
-                />
-                {errors.age && <div style={{ color: "red" }}>{errors.age}</div>}
-              </div>
-
-              <div>
-                <label>AST or TGO (U/L):</label>
-                <input
-                  className="form-control"
-                  type="number"
-                  name="ast"
-                  value={formData.ast}
-                  onChange={handleChange}
-                />
-                {errors.ast && <div style={{ color: "red" }}>{errors.ast}</div>}
-              </div>
-
-              <div>
-                <label>ALT or TGP (U/L):</label>
-                <input
-                  className="form-control"
-                  type="number"
-                  name="alt"
-                  value={formData.alt}
-                  onChange={handleChange}
-                />
-                {errors.alt && <div style={{ color: "red" }}>{errors.alt}</div>}
-              </div>
-
-              <div>
-                <label>PL (k/μL):</label>
-                <input
-                  className="form-control"
-                  type="number"
-                  name="pl"
-                  value={formData.pl}
-                  onChange={handleChange}
-                />
-                {errors.pl && <div style={{ color: "red" }}>{errors.pl}</div>}
-              </div>
-
-              <button className="btn btn-primary mt-3 mb-3" type="submit">
-                Enviar
-              </button>
-
-              <small>
-                <p style={{ marginTop: "50px" }}>
-                  <b>Blood markers and acceptable values</b>
-                </p>
-                <ul style={{ marginLeft: "-50px" }}>
-                  <li>
-                    <b>AST:&nbsp;</b>Aspartate Aminotransferase enzyme (0 - 1000
-                    U/L)
-                  </li>
-                  <li>
-                    <b>ALT:&nbsp;</b>Alanine Aminotransferase enzyme (0 - 1000
-                    U/L)
-                  </li>
-                  <li>
-                    <b>PL:&nbsp;</b>Platelet count in plasma (0 - 1000 k/μL)
-                  </li>
-                  <li>
-                    <b>AGE:&nbsp;</b>Age (0 - 150 years)
-                  </li>
-                </ul>
-              </small>
-            </form>
-          </div>
-        </div>
-        <div className="col-9 ">
-          <div class="settings">
-            <div className="row">
-              <div className="col-6">
-                <div className="mb-3">
-                  <label htmlFor="settingsSelect" className="form-label">
-                    <b>Select the model:</b>
-                  </label>
-                  <select
-                    id="settingsSelect"
-                    className="form-select"
-                    value={selectedValue}
-                    onChange={(e) => setSelectedValue(e.target.value)}
-                  >
-                    {options.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+    <div className="container mt-4 mb-5">
+      <div className="card p-4 shadow-lg">
+        <h3 className="text-center mb-4">Settings</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="row mb-3">
+            {Object.keys(inputs).map((key, index) => (
+              <div className="col-md-2 d-flex align-items-center" key={key}>
+                <div className="w-100">
+                  <label className="form-label">{key}</label>
+                  <input
+                    type="number"
+                    name={key}
+                    value={inputs[key]}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                  />
                 </div>
               </div>
+            ))}
+
+            <div className="col-md-2 d-flex flex-column align-items-start">
+              <label>&nbsp;Patient 1</label>
+              <button
+                type="button"
+                onClick={() => setPatientValues("G1")}
+                className="btn btn-success w-75 mt-2"
+              >
+                G1
+              </button>
+            </div>
+
+            <div className="col-md-2 d-flex flex-column align-items-start">
+              <label>&nbsp;Patient 2</label>
+              <button
+                type="button"
+                onClick={() => setPatientValues("G2")}
+                className="btn btn-danger w-75 mt-2"
+              >
+                G2
+              </button>
             </div>
           </div>
-
-          {data && (
-            <h4
-              className={`alert ${
-                data["prediction"] === "G1" ? "alert-success" : "alert-danger"
-              }`}
-              role="alert"
-            >
-              Predicted class: <b>{data["prediction"]}</b>
-            </h4>
-          )}
-
-          {data && (
-            <>
-              <DecisionTree
-                fulldata={data}
-                highlightNodes={data["highlights"]}
-              />
-              <div
-                style={{
-                  marginTop: "20px",
-                  border: "1px solid #ccc",
-                  padding: "20px",
-                  maxHeight: "200px",
-                  overflowY: "auto",
-                }}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">Model</label>
+              <select
+                className="form-select"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                required
               >
-                <small>
-                  <h5>Calculated values for this patient</h5>
-                  {data["values"].map((item) => (
-                    <p>
-                      {item.field}: {item.value}
-                    </p>
-                  ))}
-                </small>
-                <small>
-                  <h5>Predictions from FIB4</h5>
-                  <p>score: {data.fib4}</p>
-                </small>
-              </div>
-            </>
-          )}
-        </div>
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-6 d-flex align-items-center">
+              <input
+                type="checkbox"
+                id="lda"
+                checked={useLDA}
+                onChange={() => setUseLDA(!useLDA)}
+                className="form-check-input me-2"
+              />
+              <label htmlFor="lda" className="form-check-label">
+                Include LDA attributes
+              </label>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary w-100">
+            <b>Predict</b>
+          </button>
+        </form>
       </div>
+      {data && (
+        <div className="card mt-4 p-4 shadow-sm">
+          <h4 className="text-center">Decision Tree</h4>
+          <DecisionTree fulldata={data} highlightNodes={data["highlights"]} />
+        </div>
+      )}
+      {data && (
+        <div className="card mt-4 p-4 shadow-sm">
+          <h4 className="text-center">Results and metrics </h4>
+
+          {data["prediction"] === "G2" ? (
+            <p className="bg-danger-subtle text-dark p-2">
+              Predicted class: <b>{data["prediction"]}</b>
+            </p>
+          ) : (
+            <p className="bg-success-subtle text-dark p-2">
+              Predicted class: <b>{data["prediction"]}</b>
+            </p>
+          )}
+          <p>Confidence: {data["confidence"]}%</p>
+        </div>
+      )}
     </div>
   );
 };

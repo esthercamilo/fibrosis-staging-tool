@@ -18,6 +18,22 @@ def define_class(values):
         return 'G2'
 
 
+def replace_names(value):
+    if value.count('_') > 2:
+        return value
+
+    if 'sqrt' in value:
+        return f"\u221A{value}".replace('sqrt', '')
+    if '-1' in value:
+        return f"1/{value}".replace('-1', '')
+    if '-2' in value:
+        return f"1/{value}^2".replace('-2', '')
+    if '--' in value:
+        return value.replace('--', '/')
+    else:
+        return value
+
+
 class Predict:
     def __init__(self, root=None):
         if root:
@@ -27,13 +43,13 @@ class Predict:
 
     def lda_load(self, df):
         # fulldata set
-        results_folder = os.path.join(self.root, 'api', 'analysis', 'results')
+        results_folder = os.path.join(self.root, 'api', 'analysis', 'including_lda', 'results')
         lda_datasets = [x for x in os.listdir(results_folder) if 'lda_model' in x]
 
         for lda_d in lda_datasets:
             combo = lda_d.split('__')[-1].replace('.pkl', '')
             X = df[combo.split('_')]
-            modelpath = os.path.join(self.root, 'api', 'analysis', 'results', lda_d)
+            modelpath = os.path.join(self.root, 'api', 'analysis', 'including_lda', 'results', lda_d)
             lda_loaded = joblib.load(modelpath)
             score = lda_loaded.transform(X)
             df[combo] = score
@@ -48,11 +64,18 @@ class Predict:
             pathway.append(f"Node {node_id}")
             # Verifica se é um nó interno
             if tree.feature[node_id] != -2:  # Nó interno
+                # feature = replace_names(feature_names[tree.feature[node_id]])
                 feature = feature_names[tree.feature[node_id]]
                 threshold = tree.threshold[node_id]
 
                 # Adiciona a condição do nó
-                node["condition"] = f"{getnames(feature)} <= {threshold:.3f}"
+
+                if threshold > 10:
+                    node["condition"] = f"{threshold:.0f}"
+                elif 10 >= threshold > 0:
+                    node["condition"] = f"{threshold:.1f}"
+                else:
+                    node["condition"] = f"{threshold:.2f}"
 
                 actual_value = fv[feature].iloc[0]
                 if actual_value <= threshold:
@@ -71,19 +94,6 @@ class Predict:
             return node
 
         return recurse(0, feature_values)
-
-    @staticmethod
-    def replace_names(value):
-        if 'sqrt' in value:
-            return f"\u221A{value}".replace('sqrt', '')
-        if '-1' in value:
-            return f"1/{value}".replace('-1', '')
-        if '-2' in value:
-            return f"1/{value}^2".replace('-2', '')
-        if '--' in value:
-            return value.replace('--', '/')
-        else:
-            return value
 
     def tree_to_dict(self, tree, feature_names, feature_values):
 
@@ -105,7 +115,7 @@ class Predict:
                     th = f"{threshold:.2f}"
 
                 node["condition"] = f"{getnames(feature)} <= {th}"
-                node['title'] = self.replace_names(feature)
+                node['title'] = replace_names(feature)
 
                 left_child = recurse(tree.children_left[node_id], fv)
                 right_child = recurse(tree.children_right[node_id], fv)
@@ -128,7 +138,7 @@ class Predict:
     def fib4(df):
         return (df['AGE'] * df['ALT']) / (df['PL'] * np.sqrt(df['AST']))
 
-    def calculate(self, df):
+    def calculate(self, df, lda=False):
 
         df['FIB4'] = self.fib4(df)
 
@@ -159,23 +169,24 @@ class Predict:
         }
         result.update(df)
         # sorted_result = {k: [v] for k, v in dict(zip(list_sorted, [result[x] for x in list_sorted])).items()}
-        partial_df = pandas.DataFrame({k: [v] for k, v in result.items()})
-        # LDA data
-        # full_df = self.lda_load(partial_df)
-        return partial_df
+        df = pandas.DataFrame({k: [v] for k, v in result.items()})
+        if lda:
+            # LDA data
+            df = self.lda_load(df)
+        return df
 
-    def run(self, data: dict, model: str, lda=False):
+    def run(self, data: dict, modelname: str, lda=False):
 
         root_model_path = os.path.join(self.root, 'api', 'analysis', 'without_lda', 'results')
         if lda:
             root_model_path = os.path.join(self.root, 'api', 'analysis', 'including_lda', 'results')
 
-        modelpath = os.path.join(root_model_path, f'model1_{model}.pkl')
+        modelpath = os.path.join(root_model_path, f'model1_{modelname}.pkl')
 
         model = joblib.load(modelpath)
 
         # Porém o usuário só entra com AGE,AST,ALT,PL. Todos os outros são calculados internamente
-        inputs = self.calculate(data)
+        inputs = self.calculate(data, lda)
         fib4 = self.fib4(data)
         feature_names = list(model.feature_names_in_)
         inputs = inputs[feature_names]
@@ -197,9 +208,12 @@ class Predict:
         else:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
-        data = {'prediction': prediction[0], 'confidence': probG, 'd3tree': tree_dict,
-                'values': [{"field": self.replace_names(k), "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
-                'fib4': float(round(fib4, 2)), 'highlights': pathway}
+        data = {'prediction': prediction[0],
+                'confidence': round(probG, 2),
+                'd3tree': tree_dict,
+                'values': [{"field": replace_names(k), "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
+                'fib4': float(round(fib4, 2)),
+                'highlights': pathway}
         print(data)
         return data
 

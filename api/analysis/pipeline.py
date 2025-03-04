@@ -271,7 +271,7 @@ class Analysis:
     def individual_model(self, df, name):
         df = df.drop('FIB4', axis=1, errors="ignore")
         df = self.attributes(df)
-        # df = self.lda(df, name)
+        df = self.lda(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
