@@ -16,8 +16,10 @@ const Predictor = () => {
 
   const patientData = {
     G1: { AGE: 45, PL: 150, "AST or TGO (U/L)": 35, "ALT or TGP (U/L)": 40 },
-    G2: { AGE: 60, PL: 200, "AST or TGO (U/L)": 50, "ALT or TGP (U/L)": 60 },
+    G2: { AGE: 58, PL: 28, "AST or TGO (U/L)": 54, "ALT or TGP (U/L)": 291 },
   };
+
+  //58	28	54	291	0.759	G2 (fat)
 
   const setPatientValues = (g) => {
     setInputs(patientData[g]);
@@ -85,6 +87,7 @@ const Predictor = () => {
             <div className="col-md-2 d-flex flex-column align-items-start">
               <label>&nbsp;Patient 2</label>
               <button
+                title="NAFLD"
                 type="button"
                 onClick={() => setPatientValues("G2")}
                 className="btn btn-danger w-75 mt-2"
