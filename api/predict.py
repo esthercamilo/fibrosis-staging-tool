@@ -56,12 +56,14 @@ class Predict:
         return df
 
     @staticmethod
-    def define_highligts(tree, feature_names, feature_values, pathway):
+    def define_highligts(tree, feature_names, feature_values, pathway, possible_nodes):
 
-        def recurse(node_id, fv):
+        def recurse(node_id, fv, pn):
+
             # Inicializa o nó
             node = {"name": f"Node {node_id}"}
-            pathway.append(f"Node {node_id}")
+            if int(node_id) in pn:
+                pathway.append(f"Node {node_id}")
             # Verifica se é um nó interno
             if tree.feature[node_id] != -2:  # Nó interno
                 # feature = replace_names(feature_names[tree.feature[node_id]])
@@ -81,11 +83,11 @@ class Predict:
                 if actual_value <= threshold:
                     # Adiciona os filhos esquerdo e direito
                     node["children"] = [
-                        recurse(tree.children_left[node_id], fv)
+                        recurse(tree.children_left[node_id], fv, pn)
                     ]
                 else:
                     node["children"] = [
-                        recurse(tree.children_right[node_id], fv)
+                        recurse(tree.children_right[node_id], fv, pn)
                     ]
             else:  # Nó folha
                 # Adiciona os valores no nó folha
@@ -93,7 +95,20 @@ class Predict:
                 pathway.append(f"Node {node_id}")
             return node
 
-        return recurse(0, feature_values)
+        return recurse(0, feature_values, possible_nodes)
+
+    @staticmethod
+    def trenodes(tree):
+        node_names = []
+
+        def traverse(node):
+            node_names.append(node['name'])
+            if 'children' in node:
+                for child in node['children']:
+                    traverse(child)
+
+        traverse(tree)
+        return [int(''.join([y for y in x if y.isdigit()])) for x in node_names]
 
     def tree_to_dict(self, tree, feature_names, feature_values):
 
@@ -196,7 +211,8 @@ class Predict:
 
         pathway = []
         tree_dict = self.tree_to_dict(model.tree_, feature_names_, inputs)
-        self.define_highligts(model.tree_, feature_names_, inputs, pathway)
+        possible_nodes = self.trenodes(tree_dict)
+        self.define_highligts(model.tree_, feature_names_, inputs, pathway, possible_nodes)
 
         features = np.array(inputs).reshape(1, -1)
 
@@ -211,7 +227,8 @@ class Predict:
         data = {'prediction': prediction[0],
                 'confidence': round(probG, 2),
                 'd3tree': tree_dict,
-                'values': [{"field": replace_names(k), "value": v[0]} for k, v in inputs.to_dict(orient='dict').items()],
+                'values': [{"field": replace_names(k), "value": v[0]} for k, v in
+                           inputs.to_dict(orient='dict').items()],
                 'fib4': float(round(fib4, 2)),
                 'highlights': pathway}
         print(data)

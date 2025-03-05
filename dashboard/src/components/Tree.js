@@ -87,7 +87,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
       .attr("font-size", "12px")
-      .text((d) =>  `[${d.data.name}]: ${d.data.title}`);
+      .text((d) =>  d.data.name);
 
     g.selectAll(".link-label")
       .data(root.links())
