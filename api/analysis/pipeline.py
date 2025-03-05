@@ -271,7 +271,7 @@ class Analysis:
     def individual_model(self, df, name):
         df = df.drop('FIB4', axis=1, errors="ignore")
         df = self.attributes(df)
-        # df = self.lda(df, name)
+        df = self.lda(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
@@ -281,14 +281,14 @@ class Analysis:
         # 1. model fat
         print('iniciando FAT')
         df_fat_read = self.read('00_data_fat_n603.csv')
-        # df_fat = self.individual_model(df_fat_read, 'fat')
+        df_fat = self.individual_model(df_fat_read, 'fat')
 
         # 2. model hbv
         print('iniciando HBV')
         df_hbv1 = self.read('00_data_hbv_n177.csv')
         df_hbv2 = self.read('00_data_hbv_n568.csv')
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
-        # df_hbv = self.individual_model(df_hbv_read, 'hbv')
+        df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
         # 3. model hcv
         print('iniciando HCV')
@@ -302,7 +302,7 @@ class Analysis:
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_hbc_read = pd.concat([df_hbv_read, df_hcv_read])
-        # df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
+        df_hbcv = self.individual_model(df_hbc_read, 'hbcv')
 
         # Global
         print('iniciando Global')
@@ -310,7 +310,7 @@ class Analysis:
         df_hbv_read['DSE'] = 2
         df_hcv_read['DSE'] = 3
         df_global = pd.concat([df_fat_read, df_hbv_read, df_hcv_read])
-        # df_global = self.individual_model(df_global, 'global')
+        df_global = self.individual_model(df_global, 'global')
 
         try:
             shutil.rmtree(self.temp_results, ignore_errors=True)
