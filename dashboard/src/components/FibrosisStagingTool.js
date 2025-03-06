@@ -1,8 +1,11 @@
 import React from "react";
 import coverImage from "../assets/banner.svg";
 import Predictor from "./predictor";
+import { MathJax, MathJaxContext } from "better-react-mathjax";
 
 const FibrosisStagingTool = () => {
+  const formula = `FIB-4 = \\frac{\\text{Age} \\times \\text{AST}}{\\text{Platelets} \\times \\sqrt{\\text{ALT}}}`;
+
   return (
     <div>
       <div
@@ -85,9 +88,52 @@ const FibrosisStagingTool = () => {
                 marginTop: "50px",
                 width: "100%",
                 minWidth: "400px",
-                marginBottom: "200px",
+                marginBottom: "50px",
               }}
             />
+
+            <h3>
+              Empirical Estimation of Liver Fibrosis: FIB-4 and APRI Indices
+            </h3>
+            <p>
+              The Fibrosis Index (FIB) is a non-invasive method for assessing
+              liver fibrosis based on clinical and laboratory parameters. One of
+              the most commonly used formulas is the FIB-4 index, which
+              estimates liver fibrosis severity using age, AST, ALT, and
+              platelet count:
+            </p>
+
+            <MathJaxContext>
+              <div>
+                <p>The FIB-4 index is calculated as:</p>
+                <MathJax>{"\\[" + formula + "\\]"}</MathJax>
+              </div>
+            </MathJaxContext>
+
+            <h5>Classification: G1 vs. G2 in tradicional FIB-4</h5>
+
+            <p>
+              The classification into <strong>G1 (mild fibrosis)</strong> or{" "}
+              <strong>G2 (advanced fibrosis)</strong> depends on predefined
+              cutoff values of the FIB score. While these thresholds may vary
+              based on specific clinical guidelines, a common approach is:
+            </p>
+
+            <p>
+              <strong>G1 (Mild or No Significant Fibrosis):</strong> FIB-4 &lt;
+              1.45
+              <br />
+              <strong>G2 (Advanced Fibrosis or Cirrhosis):</strong> FIB-4 &ge;
+              1.45
+            </p>
+
+            <p>For APRI:</p>
+
+            <p>
+              <strong>G1:</strong> APRI &lt; 0.7
+              <br />
+              <strong>G2:</strong> APRI &ge; 0.7
+            </p>
           </div>
           <div className="tab-pane fade show active" id="prediction">
             <Predictor />
