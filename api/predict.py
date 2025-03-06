@@ -56,46 +56,33 @@ class Predict:
         return df
 
     @staticmethod
-    def define_highligts(tree, feature_names, feature_values, pathway, possible_nodes):
+    def define_highligts(tree, feature_names, feature_values):
 
-        def recurse(node_id, fv, pn):
-
+        def recurse(node_id, fv, path):
             # Inicializa o nó
-            node = {"name": f"Node {node_id}"}
-            if int(node_id) in pn:
-                pathway.append(f"Node {node_id}")
+            current_path = path[:]
+
             # Verifica se é um nó interno
             if tree.feature[node_id] != -2:  # Nó interno
-                # feature = replace_names(feature_names[tree.feature[node_id]])
                 feature = feature_names[tree.feature[node_id]]
                 threshold = tree.threshold[node_id]
 
-                # Adiciona a condição do nó
+                current_path.append(f"Node {node_id}")
 
-                if threshold > 10:
-                    node["condition"] = f"{threshold:.0f}"
-                elif 10 >= threshold > 0:
-                    node["condition"] = f"{threshold:.1f}"
-                else:
-                    node["condition"] = f"{threshold:.2f}"
-
+                # Se a condição for atendida, percorre o filho esquerdo, senão o direito
                 actual_value = fv[feature].iloc[0]
                 if actual_value <= threshold:
-                    # Adiciona os filhos esquerdo e direito
-                    node["children"] = [
-                        recurse(tree.children_left[node_id], fv, pn)
-                    ]
+                    return recurse(tree.children_left[node_id], fv, current_path)
                 else:
-                    node["children"] = [
-                        recurse(tree.children_right[node_id], fv, pn)
-                    ]
-            else:  # Nó folha
-                # Adiciona os valores no nó folha
-                node["condition"] = define_class(tree.value[node_id].tolist())
-                pathway.append(f"Node {node_id}")
-            return node
+                    return recurse(tree.children_right[node_id], fv, current_path)
 
-        return recurse(0, feature_values, possible_nodes)
+            else:  # Nó folha
+                # Adiciona a classe do nó folha
+                current_path.append(f"Node {int(node_id)}")
+                # current_path.append(define_class(tree.value[node_id].tolist()))
+                return current_path
+
+        return recurse(0, feature_values, [])
 
     @staticmethod
     def trenodes(tree):
@@ -108,11 +95,11 @@ class Predict:
                     traverse(child)
 
         traverse(tree)
-        return [int(''.join([y for y in x if y.isdigit()])) for x in node_names]
+        return node_names
 
-    def tree_to_dict(self, tree, feature_names, feature_values):
+    def tree_to_dict(self, tree, feature_names, feature_values, twin_nodes):
 
-        def recurse(node_id, fv):
+        def recurse(node_id, fv, tn):
             # Inicializa o nó
             node = {"name": f"Node {node_id}"}
 
@@ -132,11 +119,12 @@ class Predict:
                 node["condition"] = f"{getnames(feature)} <= {th}"
                 node['title'] = replace_names(feature)
 
-                left_child = recurse(tree.children_left[node_id], fv)
-                right_child = recurse(tree.children_right[node_id], fv)
+                left_child = recurse(tree.children_left[node_id], fv, tn)
+                right_child = recurse(tree.children_right[node_id], fv, tn)
 
                 if left_child["condition"] == right_child["condition"]:
-                    return left_child  # Mantém apenas um deles
+                    tn.append((left_child['name'], right_child['name']))
+                    return right_child  # Mantém apenas um deles
 
                 # Adiciona os filhos esquerdo e direito
                 node["children"] = [left_child, right_child]
@@ -147,7 +135,7 @@ class Predict:
 
             return node
 
-        return recurse(0, feature_values)
+        return recurse(0, feature_values, twin_nodes)
 
     @staticmethod
     def fib4(df):
@@ -209,10 +197,19 @@ class Predict:
         feature_names_ = model.feature_names_in_ if hasattr(model, 'feature_names_in_') \
             else [f'feature_{i}' for i in range(model.tree_.n_features)]
 
-        pathway = []
-        tree_dict = self.tree_to_dict(model.tree_, feature_names_, inputs)
-        possible_nodes = self.trenodes(tree_dict)
-        self.define_highligts(model.tree_, feature_names_, inputs, pathway, possible_nodes)
+        twins = []
+        tree_dict = self.tree_to_dict(model.tree_, feature_names_, inputs, twins)
+        nodes_in_tree = self.trenodes(tree_dict)
+        pathway = self.define_highligts(model.tree_, feature_names_, inputs)
+        # Redefine pathway:
+        # pathway = []
+        # for p in pathway_:
+        #     if p not in nodes_in_tree:
+        #         # Substituir pelo twin
+        #         pair = [(i, x) for i, x in enumerate(twins) if p in x]
+        #         chosen_twin = ''
+
+
 
         features = np.array(inputs).reshape(1, -1)
 
