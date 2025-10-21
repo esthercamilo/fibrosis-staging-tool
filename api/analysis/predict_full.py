@@ -21,8 +21,10 @@ def run():
         ast = float(d[2].replace(',', '.'))
         alt = float(d[3].replace(',', '.'))
         pl = float(d[4].replace(',', '.'))
+        fib4 = float(d[5].replace(',', '.'))
+        group = d[6].rstrip('\n')
 
-        partial = [pathology, age, ast, alt, pl]
+        partial = [pathology, age, ast, alt, pl, fib4, group]
         predictions = ['fat', 'hbv', 'hcv', 'hbcv', 'global']
         for p in predictions:
             pmodel = predict(pathology, age, ast, alt, pl, p)
@@ -31,11 +33,13 @@ def run():
             pmodel_lda = predict(pathology, age, ast, alt, pl, p, lda=True)
             partial.append(pmodel_lda['prediction'])
         output.append(partial)
+        # if i> 10 :
+        #     break
 
     with open('prediction_table.csv', 'w') as p:
         p.write(';'.join(data[0]))
         for o in output:
-            p.write(';'.join([str(x) for x in o]) + '\n')
+            p.write(';'.join([str(x).replace('.', ',') for x in o]) + '\n')
             p.flush()
     return output
 
