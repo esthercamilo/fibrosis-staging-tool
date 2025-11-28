@@ -1,0 +1,12 @@
+Coeficientes
+=================
+ALTsqrt_AST--ALT_ALT--AGE_PL-1
+{'ALTsqrt': 0.1, 'AST--ALT': 0.041, 'ALT--AGE': -0.155, 'PL-1': 41.774}
+ALTsqrt_ALT--AGE_PL-1
+{'ALTsqrt': 0.094, 'ALT--AGE': -0.151, 'PL-1': 42.329}
+ALTsqrt_FIB42_AST--ALT_ALT--AGE_PL-1
+{'ALTsqrt': 0.14, 'FIB42': -0.003, 'AST--ALT': 0.029, 'ALT--AGE': -0.177, 'PL-1': 88.346}
+ALTsqrt_FIB42_ALT--AGE_PL-1
+{'ALTsqrt': 0.137, 'FIB42': -0.003, 'ALT--AGE': -0.174, 'PL-1': 89.636}
+AST2_ALT*AST_AGE*AST_PL-1
+{'AST2': 0.0, 'ALT*AST': -0.0, 'AGE*AST': 0.0, 'PL-1': 41.267}

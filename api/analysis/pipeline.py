@@ -59,16 +59,19 @@ class Analysis:
         # Todas as combinações possíveis
         exclude = ['GROUP', 'DSE']
         features = [x for x in df.columns if x not in exclude]
-
+        dict_coef = {}
         results = []
 
         f = open(os.path.join(self.root, 'api', 'analysis', 'results', f'features_{name}.csv'), 'w')
-
+        i=0
         for combo in self.generate_combinations(features):
 
             if len(combo) > 6 or len(combo) <= 1:
                 continue
-            f.write(str(combo) + '\n')
+
+            i += 1
+            # if i > 10:
+            #     break
             undersampler = RandomUnderSampler(random_state=42)
             X = df[list(combo)]
 
@@ -79,6 +82,9 @@ class Analysis:
             # LDA
             lda = LinearDiscriminantAnalysis()
             lda.fit(X_train, y_train)
+
+            coef = dict(zip(list(X.columns), list(lda.coef_)[0]))
+            dict_coef[combo] = coef
 
             str_features = '_'.join(combo)
             modelpath = os.path.join(self.temp_results, f'lda_model_{name}__{str_features}.pkl')
@@ -101,9 +107,10 @@ class Analysis:
                 if roc_auc > lowest[0][3]:
                     results = lowest[1:] + [[fpr, tpr, combo, roc_auc, colname, scores]]
 
-        # Imprime somente as 10 com melhores resultados
+        # Imprime somente as 5 com melhores resultados
         sorted_result = sorted(results, key=lambda k: -k[3])[0: 6]
         # Plot
+        f.write('Coeficientes\n=================\n')
         for sr in sorted_result:
             plt.plot(sr[0], sr[1], label=f"{sr[2]} (AUC = {sr[3]:.2f})")
             df[sr[4]] = sr[5]
@@ -111,6 +118,8 @@ class Analysis:
             source_file = os.path.join(self.root, 'api', 'analysis', 'results_temp', f'lda_model_{name}__{sr[4]}.pkl')
             target_file = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_model_{name}__{sr[4]}.pkl')
             shutil.move(source_file, target_file)
+            f.write(f"{sr[4]}\n")
+            f.write(str({k: round(float(v),3) for k, v in dict_coef[sr[2]].items()}) + '\n')
         f.close()
 
         fulldata_lda = os.path.join(self.root, 'api', 'analysis', 'results', f'lda_traingdata_{name}.csv')

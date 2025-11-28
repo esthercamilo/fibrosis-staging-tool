@@ -4,6 +4,8 @@ import joblib
 import pandas
 from sklearn.tree import export_text
 
+from core.settings import BASE_DIR
+
 
 def getnames(value):
     dict_names = {'AGE_AST_FIB4_AGEsqrt_ASTsqrt_ALTsqrt': 'LDA1', 'AGE_AST_FIB4_ASTsqrt_ALTsqrt': 'LDA2',
@@ -221,13 +223,17 @@ class Predict:
         else:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
+        with open(os.path.join(BASE_DIR, 'api', 'analysis', 'results', f'features_{modelname}.csv'), 'r') as f:
+            coef = f.read()
+
         data = {'prediction': prediction[0],
                 'confidence': round(probG, 2),
                 'd3tree': tree_dict,
                 'values': [{"field": replace_names(k), "value": v[0]} for k, v in
                            inputs.to_dict(orient='dict').items()],
                 'fib4': float(round(fib4, 2)),
-                'highlights': pathway}
+                'highlights': pathway,
+                'coeficientes': coef}
         print(data)
         return data
 

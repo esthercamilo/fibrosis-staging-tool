@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import DecisionTree from "./Tree";
 import axios from "axios";
 
@@ -33,8 +33,8 @@ const Predictor = () => {
     e.preventDefault();
 
     try {
-      //const urlBase = "http://127.0.0.1:8000";
-      const urlBase = "https://bioinformatica.fca.unesp.br";
+      const urlBase = "http://127.0.0.1:8000";
+      //const urlBase = "https://bioinformatica.fca.unesp.br";
       let url = `${urlBase}/api/predict/${model.toLowerCase()}/?AGE=${
         inputs["AGE"]
       }&AST=${inputs["AST or TGO (U/L)"]}&ALT=${
@@ -153,6 +153,9 @@ const Predictor = () => {
           )}
           <p>Confidence: {data["confidence"]}%</p>
           <p>FIB-4 score: {data["fib4"]}</p>
+          <pre>
+            {data["coeficientes"].replace("Coeficientes", "Coeficientes LDA")};
+          </pre>
         </div>
       )}
     </div>

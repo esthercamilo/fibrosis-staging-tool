@@ -1,0 +1,12 @@
+Coeficientes
+=================
+FIB4_AST2_ALT*AST_AGE*AST_PL-1
+{'FIB4': -0.385, 'AST2': -0.0, 'ALT*AST': 0.0, 'AGE*AST': 0.0, 'PL-1': 344.844}
+FIB4_AST2_ALT2_AGE*AST_PL-1
+{'FIB4': -0.362, 'AST2': -0.0, 'ALT2': 0.0, 'AGE*AST': 0.0, 'PL-1': 336.626}
+AST2_FIB42_ALT*AST_AGE*AST_PL-1
+{'AST2': -0.0, 'FIB42': -0.038, 'ALT*AST': 0.0, 'AGE*AST': 0.0, 'PL-1': 353.462}
+PL_FIB4_ALT2_PL-1
+{'PL': -0.0, 'FIB4': -0.204, 'ALT2': 0.0, 'PL-1': 289.981}
+FIB4_ALT2_PL2_PL-1
+{'FIB4': -0.2, 'ALT2': 0.0, 'PL2': 0.0, 'PL-1': 305.49}
