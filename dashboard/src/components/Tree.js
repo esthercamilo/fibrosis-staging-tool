@@ -87,7 +87,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
       .attr("dy", "0.35em")
       .attr("text-anchor", "middle")
       .attr("font-size", "12px")
-      .text((d) =>  d.data.condition);
+      .text((d) => d.data.condition);
 
     g.selectAll(".link-label")
       .data(root.links())
@@ -118,7 +118,7 @@ const DecisionTree = ({ fulldata, highlightNodes = [] }) => {
         overflow: "hidden",
       }}
     >
-      <svg ref={svgRef}></svg>
+      <svg id="tree-svg" ref={svgRef}></svg>
     </div>
   );
 };

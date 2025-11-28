@@ -29,12 +29,37 @@ const Predictor = () => {
     setInputs({ ...inputs, [e.target.name]: e.target.value });
   };
 
+  function downloadSVG() {
+    const svg = document.getElementById("tree-svg");
+
+    if (!svg) return;
+
+    // Clonar e preparar o SVG
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    // Converter para string
+    const svgData = new XMLSerializer().serializeToString(clone);
+
+    // Criar blob e link
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    // Criar link de download
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `arvore_${model}.svg`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const urlBase = "http://127.0.0.1:8000";
-      //const urlBase = "https://bioinformatica.fca.unesp.br";
+      // const urlBase = "http://127.0.0.1:8000";
+      const urlBase = "https://bioinformatica.fca.unesp.br";
       let url = `${urlBase}/api/predict/${model.toLowerCase()}/?AGE=${
         inputs["AGE"]
       }&AST=${inputs["AST or TGO (U/L)"]}&ALT=${
@@ -156,6 +181,9 @@ const Predictor = () => {
           <pre>
             {data["coeficientes"].replace("Coeficientes", "Coeficientes LDA")};
           </pre>
+          <button onClick={downloadSVG} className="btn btn-primary">
+            Exportar árvore
+          </button>
         </div>
       )}
     </div>
