@@ -58,8 +58,8 @@ const Predictor = () => {
     e.preventDefault();
 
     try {
-      const urlBase = "http://127.0.0.1:8000";
-      //const urlBase = "https://bioinformatica.fca.unesp.br";
+      //const urlBase = "http://127.0.0.1:8000";
+      const urlBase = "https://bioinformatica.fca.unesp.br";
       let url = `${urlBase}/api/predict/${model.toLowerCase()}/?AGE=${
         inputs["AGE"]
       }&AST=${inputs["AST or TGO (U/L)"]}&ALT=${
