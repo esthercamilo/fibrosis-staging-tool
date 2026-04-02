@@ -277,10 +277,12 @@ class Analysis:
         plt.savefig(tree_path, dpi=300)
         print(f"Árvore de decisão salva em {tree_path}")
 
-    def individual_model(self, df, name):
+    def individual_model(self, df, name, skip_lda=True):
         df = df.drop('FIB4', axis=1, errors="ignore")
         df = self.attributes(df)
-        df = self.lda(df, name)
+        if not skip_lda:
+            print(f"Calculando LDA para {name}")
+            df = self.lda(df, name)
         df.to_csv(os.path.join(self.root, 'api', 'analysis', 'results', f'fulldata_{name}.csv'), index=False)
         self.decision_tree(df, name)
         return df
@@ -299,12 +301,19 @@ class Analysis:
         df_hbv_read = pd.concat([df_hbv1, df_hbv2])
         df_hbv = self.individual_model(df_hbv_read, 'hbv')
 
-        # 3. model hcv
-        print('iniciando HCV')
-        df_hcv1 = self.read('00_data_hcv_n73_proprio.csv')
-        df_hcv2 = self.read('00_data_hcv_n230.csv')
-        df_hcv_read = pd.concat([df_hcv1, df_hcv2])
-        df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        first_version = False
+        if first_version:
+            # 3. model hcv
+            print('iniciando HCV')
+            df_hcv1 = self.read('00_data_hcv_n73_proprio.csv')
+            df_hcv2 = self.read('00_data_hcv_n230.csv')
+            df_hcv_read = pd.concat([df_hcv1, df_hcv2])
+            df_hcv = self.individual_model(df_hcv_read, 'hcv')
+        else:
+            # 3. model hcv novo
+            print('iniciando HCV')
+            df_hcv_read = self.read('00_data_hcv_novo.csv')
+            df_hcv = self.individual_model(df_hcv_read, 'hcv')
 
         # 4. model hbv + hcv
         print('iniciando HBV + HCV')

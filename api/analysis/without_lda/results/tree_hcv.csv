@@ -1,5 +1,5 @@
-Accuracy: 0.5185185185185185
-Precision: 0.375
-Recall:0.6666666666666666
-F1 Score: 0.48
-Area under the curve (AUC): 0.6604938271604938
+Accuracy: 0.7222222222222222
+Precision: 0.7
+Recall:0.7777777777777778
+F1 Score: 0.7368421052631579
+Area under the curve (AUC): 0.763888888888889

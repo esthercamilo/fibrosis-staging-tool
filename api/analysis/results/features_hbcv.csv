@@ -1,12 +1,12 @@
 Coeficientes
 =================
-ALTsqrt_AST--ALT_ALT--AGE_PL-1
-{'ALTsqrt': 0.1, 'AST--ALT': 0.041, 'ALT--AGE': -0.155, 'PL-1': 41.774}
-ALTsqrt_ALT--AGE_PL-1
-{'ALTsqrt': 0.094, 'ALT--AGE': -0.151, 'PL-1': 42.329}
-ALTsqrt_FIB42_AST--ALT_ALT--AGE_PL-1
-{'ALTsqrt': 0.14, 'FIB42': -0.003, 'AST--ALT': 0.029, 'ALT--AGE': -0.177, 'PL-1': 88.346}
-ALTsqrt_FIB42_ALT--AGE_PL-1
-{'ALTsqrt': 0.137, 'FIB42': -0.003, 'ALT--AGE': -0.174, 'PL-1': 89.636}
-AST2_ALT*AST_AGE*AST_PL-1
-{'AST2': 0.0, 'ALT*AST': -0.0, 'AGE*AST': 0.0, 'PL-1': 41.267}
+FIB4_ALTsqrt_AST--ALT_PL*AST_ALT^2
+{'FIB4': 0.124, 'ALTsqrt': -0.098, 'AST--ALT': 0.242, 'PL*AST': -0.0, 'ALT^2': -174.892}
+FIB4_ALTsqrt_AST--ALT_ALT^2
+{'FIB4': 0.126, 'ALTsqrt': -0.109, 'AST--ALT': 0.24, 'ALT^2': -175.197}
+FIB4_ALTsqrt_AST--ALT_AST--AGE_ALT^2
+{'FIB4': 0.128, 'ALTsqrt': -0.126, 'AST--ALT': 0.235, 'AST--AGE': 0.043, 'ALT^2': -175.943}
+FIB4_ALTsqrt_AST--ALT_ALT*AST_ALT^2
+{'FIB4': 0.125, 'ALTsqrt': -0.132, 'AST--ALT': 0.245, 'ALT*AST': 0.0, 'ALT^2': -183.217}
+FIB4_ALT2_ALTsqrt_AST--ALT_ALT^2
+{'FIB4': 0.127, 'ALT2': -0.0, 'ALTsqrt': -0.099, 'AST--ALT': 0.237, 'ALT^2': -171.151}

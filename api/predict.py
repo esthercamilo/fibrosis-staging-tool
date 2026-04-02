@@ -223,8 +223,11 @@ class Predict:
         else:
             probG = round(float(model.predict_proba(features)[0][1]), 2) * 100
 
-        with open(os.path.join(BASE_DIR, 'api', 'analysis', 'results', f'features_{modelname}.csv'), 'r') as f:
-            coef = f.read()
+        try:
+            with open(os.path.join(root_model_path, f'features_{modelname}.csv'), 'r') as f:
+                coef = f.read()
+        except Exception as e:
+            coef = 'Disponível somente para cálculos com LDA'
 
         data = {'prediction': prediction[0],
                 'confidence': round(probG, 2),
